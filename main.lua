@@ -1,7 +1,7 @@
 --[[
-    🌸 DELTA PREMIUM CUTE HUB - ULTIMATE OMEGA V5.1 🌸
-    - Thiết kế: Sweet Pink Pastel (Siêu dễ thương, bo góc mềm mại)
-    - SỬA LỖI: Hiển thị đầy đủ các nút tính năng khi chuyển đổi giữa các Tab!
+    🌸 DELTA PREMIUM CUTE HUB - VERSION 5.2 ULTRA-SAFE 🌸
+    - Đã sửa hoàn toàn lỗi trống Hub trên Mobile!
+    - Tích hợp hệ thống kéo thả (Drag) tự viết siêu mượt.
 --]]
 
 -- Reset kết nối cũ để tránh lag game
@@ -48,7 +48,7 @@ local function spawnHeartVFX(position)
         local att = Instance.new("Attachment", Workspace.Terrain)
         att.WorldPosition = position
         local pe = Instance.new("ParticleEmitter", att)
-        pe.Texture = "rbxassetid://15444146746" -- Heart decal cute
+        pe.Texture = "rbxassetid://15444146746"
         pe.Color = ColorSequence.new(Color3.fromRGB(255, 182, 193), Color3.fromRGB(255, 105, 180))
         pe.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 0)})
         pe.Lifetime = NumberRange.new(0.5, 1)
@@ -59,7 +59,7 @@ local function spawnHeartVFX(position)
 end
 
 ----------------------------------------------------
--- 🎀 MÀN HÌNH LOADING SIÊU CUTE 🎀
+-- 🎀 MÀN HÌNH LOADING CUTE 🎀
 ----------------------------------------------------
 local CuteGui = Instance.new("ScreenGui")
 local success, parent = pcall(function() return game:GetService("CoreGui") end)
@@ -69,7 +69,7 @@ CuteGui.ResetOnSpawn = false
 
 local LoadingFrame = Instance.new("Frame", CuteGui)
 LoadingFrame.Size = UDim2.new(1, 0, 1, 0)
-LoadingFrame.BackgroundColor3 = Color3.fromRGB(255, 240, 245) -- Lavender Blush
+LoadingFrame.BackgroundColor3 = Color3.fromRGB(255, 240, 245)
 LoadingFrame.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local LoadingHeart = Instance.new("TextLabel", LoadingFrame)
@@ -88,20 +88,19 @@ LoadingText.BackgroundTransparency = 1
 LoadingText.Font = Enum.Font.FredokaOne
 LoadingText.Text = "Đang tải Delta Cute Hub v5..."
 LoadingText.TextColor3 = Color3.fromRGB(255, 105, 180)
-LoadingText.TextSize = 20
+LoadingText.TextSize = 18
 
 local ProgressBarBg = Instance.new("Frame", LoadingFrame)
-ProgressBarBg.Size = UDim2.new(0, 250, 0, 10)
-ProgressBarBg.Position = UDim2.new(0.5, -125, 0.65, 0)
+ProgressBarBg.Size = UDim2.new(0, 200, 0, 8)
+ProgressBarBg.Position = UDim2.new(0.5, -100, 0.65, 0)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(255, 218, 224)
-local BarCorner = Instance.new("UICorner", ProgressBarBg)
+Instance.new("UICorner", ProgressBarBg)
 
 local ProgressBar = Instance.new("Frame", ProgressBarBg)
 ProgressBar.Size = UDim2.new(0, 0, 1, 0)
 ProgressBar.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
-local ProgressCorner = Instance.new("UICorner", ProgressBar)
+Instance.new("UICorner", ProgressBar)
 
--- Xoay trái tim lấp lánh khi load
 task.spawn(function()
     while LoadingFrame.Parent do
         LoadingHeart.Rotation = LoadingHeart.Rotation + 4
@@ -109,55 +108,81 @@ task.spawn(function()
     end
 end)
 
--- Hiệu ứng chạy thanh Loading
 playCuteSound(6514115160)
-TweenService:Create(ProgressBar, TweenInfo.new(1.5, Enum.EasingStyle.OutQuad), {Size = UDim2.new(1, 0, 1, 0)}):Play()
-task.wait(1.7)
-TweenService:Create(LoadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-for _, v in ipairs(LoadingFrame:GetChildren()) do
-    if v:IsA("TextLabel") or v:IsA("Frame") then
-        TweenService:Create(v, TweenInfo.new(0.3), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-    end
-end
-task.wait(0.5)
+TweenService:Create(ProgressBar, TweenInfo.new(1.2, Enum.EasingStyle.OutQuad), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+task.wait(1.4)
 LoadingFrame:Destroy()
 
 ----------------------------------------------------
--- 🎀 THIẾT KẾ GIAO DIỆN CHÍNH CUTE 🎀
+-- 🎀 THIẾT KẾ GIAO DIỆN CHÍNH (Đã sửa lỗi hiển thị) 🎀
 ----------------------------------------------------
 local MainFrame = Instance.new("Frame", CuteGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(255, 245, 247) -- Hồng sữa cực ngọt
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -190)
-MainFrame.Size = UDim2.new(0, 550, 0, 380)
+MainFrame.BackgroundColor3 = Color3.fromRGB(255, 245, 247)
+-- Căn chỉnh kích thước tối ưu hơn cho cả Mobile và PC
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 520, 0, 340)
 MainFrame.Active = true
-MainFrame.Draggable = true
 
 local FrameCorner = Instance.new("UICorner", MainFrame)
-FrameCorner.CornerRadius = UDim.new(0, 20)
+FrameCorner.CornerRadius = UDim.new(0, 16)
 
-local Stroke = Instance.new("UIStroke", MainFrame)
-Stroke.Thickness = 3
-Stroke.Color = Color3.fromRGB(255, 192, 203)
+-- Bọc UIStroke trong pcall đề phòng Executor không hỗ trợ vẽ viền
+pcall(function()
+    local Stroke = Instance.new("UIStroke", MainFrame)
+    Stroke.Thickness = 2.5
+    Stroke.Color = Color3.fromRGB(255, 192, 203)
+end)
+
+-- HỆ THỐNG KÉO THẢ TỰ VIẾT (Thay thế hoàn toàn Draggable = true)
+local dragToggle = false
+local dragStart = nil
+local startPos = nil
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragToggle = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if dragToggle then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
 
 -- Tiêu đề chính dễ thương
 local Title = Instance.new("TextLabel", MainFrame)
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 20, 0, 12)
-Title.Size = UDim2.new(1, -100, 0, 30)
+Title.Position = UDim2.new(0, 16, 0, 10)
+Title.Size = UDim2.new(1, -100, 0, 25)
 Title.Font = Enum.Font.FredokaOne
 Title.Text = "🧁 DELTA PREMIUM CUTE HUB 🧁"
 Title.TextColor3 = Color3.fromRGB(255, 105, 180)
-Title.TextSize = 22
+Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Container chứa các Tab bên trái
 local TabContainer = Instance.new("ScrollingFrame", MainFrame)
 TabContainer.BackgroundColor3 = Color3.fromRGB(255, 228, 233)
-TabContainer.Position = UDim2.new(0, 15, 0, 55)
-TabContainer.Size = UDim2.new(0, 130, 1, -70)
+TabContainer.Position = UDim2.new(0, 12, 0, 45)
+TabContainer.Size = UDim2.new(0, 120, 1, -60)
 TabContainer.CanvasSize = UDim2.new(0, 0, 1.2, 0)
 TabContainer.ScrollBarThickness = 0
-Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 10)
 
 local TabList = Instance.new("UIListLayout", TabContainer)
 TabList.Padding = UDim.new(0, 6)
@@ -166,12 +191,12 @@ TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 -- Container chứa các nút chức năng bên phải
 local ContentContainer = Instance.new("ScrollingFrame", MainFrame)
 ContentContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ContentContainer.Position = UDim2.new(0, 155, 0, 55)
-ContentContainer.Size = UDim2.new(1, -170, 1, -70)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0) -- Hỗ trợ cuộn tự động
-ContentContainer.ScrollBarThickness = 4
+ContentContainer.Position = UDim2.new(0, 142, 0, 45)
+ContentContainer.Size = UDim2.new(1, -154, 1, -60)
+ContentContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+ContentContainer.ScrollBarThickness = 3
 ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 182, 193)
-Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 10)
 
 local ContentLayout = Instance.new("UIListLayout", ContentContainer)
 ContentLayout.Padding = UDim.new(0, 8)
@@ -182,20 +207,20 @@ ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ContentContainer.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 20)
 end)
 
--- Nút đóng Hub
+-- Nút đóng Hub hình tròn cute
 local CloseBtn = Instance.new("TextButton", MainFrame)
-CloseBtn.Size = UDim2.new(0, 28, 0, 28)
-CloseBtn.Position = UDim2.new(1, -38, 0, 12)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -32, 0, 10)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
 CloseBtn.Text = "✖"
 CloseBtn.Font = Enum.Font.FredokaOne
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 14
+CloseBtn.TextSize = 12
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
 CloseBtn.MouseButton1Click:Connect(function() CuteGui:Destroy() end)
 
 ----------------------------------------------------
--- BỘ DỰNG UI CUTE ENGINE (Đã sửa lỗi vẽ nút)
+-- BỘ DỰNG UI CUTE ENGINE
 ----------------------------------------------------
 local function clearContent()
     for _, child in ipairs(ContentContainer:GetChildren()) do
@@ -205,25 +230,25 @@ end
 
 local function addParagraph(text)
     local p = Instance.new("TextLabel")
-    p.Size = UDim2.new(0.92, 0, 0, 32)
+    p.Size = UDim2.new(0.92, 0, 0, 28)
     p.BackgroundTransparency = 1
     p.Font = Enum.Font.FredokaOne
     p.Text = "🧸 " .. text
     p.TextColor3 = Color3.fromRGB(255, 105, 180)
-    p.TextSize = 13
+    p.TextSize = 12
     p.TextXAlignment = Enum.TextXAlignment.Left
     p.Parent = ContentContainer
 end
 
 local function addButton(name, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.92, 0, 0, 38)
+    btn.Size = UDim2.new(0.92, 0, 0, 34)
     btn.BackgroundColor3 = Color3.fromRGB(255, 192, 203)
     btn.Text = "⭐ " .. name
     btn.Font = Enum.Font.FredokaOne
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 14
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     btn.Parent = ContentContainer
     
     btn.MouseButton1Click:Connect(function()
@@ -235,13 +260,13 @@ end
 local function addToggle(name, default, callback)
     local active = default
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.92, 0, 0, 38)
+    btn.Size = UDim2.new(0.92, 0, 0, 34)
     btn.BackgroundColor3 = active and Color3.fromRGB(255, 105, 180) or Color3.fromRGB(245, 240, 242)
     btn.Text = (active and "💝 " or "🤍 ") .. name
     btn.Font = Enum.Font.FredokaOne
     btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
-    btn.TextSize = 13
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     btn.Parent = ContentContainer
     
     btn.MouseButton1Click:Connect(function()
@@ -256,17 +281,17 @@ end
 
 local function addSlider(name, min, max, default, callback)
     local valLabel = Instance.new("TextLabel")
-    valLabel.Size = UDim2.new(0.92, 0, 0, 20)
+    valLabel.Size = UDim2.new(0.92, 0, 0, 18)
     valLabel.BackgroundTransparency = 1
     valLabel.Font = Enum.Font.FredokaOne
     valLabel.Text = name .. ": " .. tostring(default)
     valLabel.TextColor3 = Color3.fromRGB(120, 120, 120)
-    valLabel.TextSize = 12
+    valLabel.TextSize = 11
     valLabel.TextXAlignment = Enum.TextXAlignment.Left
     valLabel.Parent = ContentContainer
 
     local sliderBg = Instance.new("TextButton")
-    sliderBg.Size = UDim2.new(0.92, 0, 0, 12)
+    sliderBg.Size = UDim2.new(0.92, 0, 0, 10)
     sliderBg.BackgroundColor3 = Color3.fromRGB(255, 218, 224)
     sliderBg.Text = ""
     Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
@@ -305,10 +330,10 @@ local function addSlider(name, min, max, default, callback)
 end
 
 ----------------------------------------------------
--- LOGIC TÍNH NĂNG ĐÃ ĐƯỢC TỐI ƯU HÓA
+-- LOGIC TÍNH NĂNG
 ----------------------------------------------------
 
--- 1. SIÊU NHÂN BẮN LAZER FLING (Đã tối ưu Fling cực mạnh)
+-- 1. SIÊU NHÂN BẮN LAZER FLING
 local laserHeroActive = false
 local laserConn = nil
 local heroVFX = nil
@@ -323,7 +348,6 @@ local function toggleLaserHero(Value)
         playCuteSound(6514115160)
         spawnHeartVFX(hrp.Position)
         
-        -- Cánh/Vòng tròn thiên thần phát sáng cute
         heroVFX = Instance.new("Part", char)
         heroVFX.Size = Vector3.new(3, 0.2, 3)
         heroVFX.Shape = Enum.PartType.Cylinder
@@ -337,7 +361,6 @@ local function toggleLaserHero(Value)
         weld.Part1 = heroVFX
         weld.C0 = CFrame.new(0, 4, 0)
         
-        -- Click chuột/Chạm màn hình để Fling mục tiêu dính đạn
         laserConn = UserInputService.InputBegan:Connect(function(input, processed)
             if processed then return end
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -353,7 +376,6 @@ local function toggleLaserHero(Value)
                     local targetChar = rayResult.Instance.Parent
                     local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
                     
-                    -- Vẽ tia Laser Neon hồng
                     local beam = Instance.new("Part", Workspace)
                     beam.CanCollide = false
                     beam.Anchored = true
@@ -370,20 +392,16 @@ local function toggleLaserHero(Value)
                     TweenService:Create(beam, TweenInfo.new(0.2), {Transparency = 1, Size = Vector3.new(0, 0, distance)}):Play()
                     task.delay(0.2, function() beam:Destroy() end)
                     
-                    -- CƠ CHẾ SPIN FLING 100% HOẠT ĐỘNG
                     if targetHrp and targetChar ~= char then
                         spawnHeartVFX(targetHrp.Position)
-                        
                         task.spawn(function()
                             local oldCFrame = hrp.CFrame
                             local oldVelocity = hrp.Velocity
                             
-                            -- Tạo lực xoay cực nhanh trên thân người mình
                             local bAV = Instance.new("BodyAngularVelocity", hrp)
                             bAV.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
                             bAV.AngularVelocity = Vector3.new(0, 99999, 0)
                             
-                            -- Dịch chuyển siêu nhanh đến đối thủ và hất văng
                             for i = 1, 8 do
                                 if targetHrp and hrp then
                                     hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0.5, 0)
@@ -467,7 +485,7 @@ local function toggleWaterWalk(Value)
     end
 end
 
--- 3. CÁC BIẾN CHẠY & FLY CŨ TRẢ LẠI
+-- 3. BAY LƯỢN (FLY)
 local flyActive = false
 local flySpeed = 50
 local flyConn = nil
@@ -498,8 +516,8 @@ local function toggleFly(Value)
         if UserInputService.TouchEnabled then
             ContextActionService:BindAction("FlyUp", handleFlyAction, true, Enum.KeyCode.ButtonR2)
             ContextActionService:BindAction("FlyDown", handleFlyAction, true, Enum.KeyCode.ButtonL2)
-            ContextActionService:SetTitle("FlyUp", "▲ Bay Lên")
-            ContextActionService:SetTitle("FlyDown", "▼ Hạ Xuống")
+            ContextActionService:SetTitle("FlyUp", "▲ Lên")
+            ContextActionService:SetTitle("FlyDown", "▼ Xuống")
         end
         
         flyConn = RunService.RenderStepped:Connect(function()
@@ -533,7 +551,7 @@ local function toggleFly(Value)
 end
 
 ----------------------------------------------------
--- THIẾT LẬP CÁC TABS CHỨC NĂNG CỤ THỂ
+-- THIẾT LẬP CÁC TABS CHỨC NĂNG
 ----------------------------------------------------
 
 local function loadMainTab()
@@ -625,7 +643,7 @@ local function loadVisualsTab()
                     end
                 end
             end
-            for _, p in ipairs(Players:GetPlayers()) do applyESP(p) end
+            for _, p in ipairs(Players:GetPlayers()) do pcall(function() applyESP(p) end) end
             _G.DeltaHubConnections["ESPAdded"] = Players.PlayerAdded:Connect(applyESP)
         else
             if _G.DeltaHubConnections["ESPAdded"] then _G.DeltaHubConnections["ESPAdded"]:Disconnect() end
@@ -692,20 +710,20 @@ local tabs = {
 
 for _, tabData in ipairs(tabs) do
     local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(0.9, 0, 0, 36)
+    tabBtn.Size = UDim2.new(0.9, 0, 0, 32)
     tabBtn.BackgroundColor3 = Color3.fromRGB(255, 205, 215)
     tabBtn.Text = tabData[1]
     tabBtn.Font = Enum.Font.FredokaOne
     tabBtn.TextColor3 = Color3.fromRGB(130, 80, 90)
-    tabBtn.TextSize = 13
-    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 8)
+    tabBtn.TextSize = 12
+    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
     tabBtn.Parent = TabContainer
     
     tabBtn.MouseButton1Click:Connect(function()
         playCuteSound(1222220043)
-        tabData[2]()
+        pcall(tabData[2])
     end)
 end
 
--- Tự động mở Tab Chính đầu tiên sau khi load
-loadMainTab()
+-- Khởi tạo trang đầu tiên sau khi load thành công
+pcall(loadMainTab)
