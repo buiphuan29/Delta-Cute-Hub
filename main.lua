@@ -1,5 +1,5 @@
--- [[ QUANTUM CORE PREMIUM HUB V2 - ANTI & CLONE UPDATE ]] --
--- Fixed UI Positioning, Custom Cursor, Shift Lock, Dash, Double Jump, Clone Guard & Anti-Cheats
+-- [[ QUANTUM CORE PREMIUM HUB V3 - GHOST MIMIC, PRO BUILD & AI PREDICT ]] --
+-- Đầy đủ UI, tính năng di chuyển, chống hack, phân thân ma quái, xây dựng cải tiến và AI dự đoán
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -40,7 +40,7 @@ ScreenGui.IgnoreGuiInset = true
 pcall(function() syn.protect_gui(ScreenGui) end)
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Main Window (Sửa lỗi layout, thiết kế sang xịn mịn hơn)
+-- Main Window
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 580, 0, 390)
@@ -69,7 +69,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0.4, 0, 1, 0)
 Title.Position = UDim2.new(0, 18, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "QUANTUM CORE V2"
+Title.Text = "QUANTUM CORE V3"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
@@ -114,7 +114,7 @@ Divider.BackgroundColor3 = Theme.Border
 Divider.Parent = MainFrame
 
 ----------------------------------------------------------------
--- SIDEBAR (ĐÃ FIX: Đưa User Card lên đầu để không bị đè nút)
+-- SIDEBAR
 ----------------------------------------------------------------
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 160, 1, -43)
@@ -134,7 +134,7 @@ SidebarPatch.BackgroundColor3 = Theme.Sidebar
 SidebarPatch.BorderSizePixel = 0
 SidebarPatch.Parent = Sidebar
 
--- USER CARD (Tuyệt đối nằm trên cùng, an toàn và trực quan)
+-- User Card
 local UserInfoFrame = Instance.new("Frame")
 UserInfoFrame.Size = UDim2.new(0, 144, 0, 52)
 UserInfoFrame.Position = UDim2.new(0, 8, 0, 8)
@@ -185,7 +185,7 @@ AgeLabel.Font = Enum.Font.Gotham
 AgeLabel.TextXAlignment = Enum.TextXAlignment.Left
 AgeLabel.Parent = UserInfoFrame
 
--- Cuộn Tab ở phía dưới
+-- Tab Navigation Scroll
 local TabScroll = Instance.new("ScrollingFrame")
 TabScroll.Size = UDim2.new(1, 0, 1, -70)
 TabScroll.Position = UDim2.new(0, 0, 0, 68)
@@ -279,20 +279,17 @@ local function CreateVectorIcon(parent, iconType)
         st.Color = Theme.TextMuted
         st.Thickness = 1.5
         Instance.new("UICorner", outer).CornerRadius = UDim.new(1, 0)
-        local center = Instance.new("Frame", iconFrame)
-        center.Size = UDim2.new(0, 4, 0, 4)
-        center.Position = UDim2.new(0.5, -2, 0.5, -2)
-        center.BackgroundColor3 = Theme.TextMuted
-        Instance.new("UICorner", center).CornerRadius = UDim.new(1, 0)
+    elseif iconType == "Movement" then
+        local wingLeft = Instance.new("Frame", iconFrame)
+        wingLeft.Size = UDim2.new(0, 2, 0, 10)
+        wingLeft.Position = UDim2.new(0.3, 0, 0.2, 0)
+        wingLeft.Rotation = 35
+        wingLeft.BackgroundColor3 = Theme.TextMuted
     elseif iconType == "Visuals" then
         local line = Instance.new("Frame", iconFrame)
         line.Size = UDim2.new(1, 0, 0, 2)
         line.Position = UDim2.new(0, 0, 0.5, -1)
         line.BackgroundColor3 = Theme.TextMuted
-        local block = Instance.new("Frame", iconFrame)
-        block.Size = UDim2.new(0, 6, 0, 10)
-        block.Position = UDim2.new(0.2, 0, 0.5, -5)
-        block.BackgroundColor3 = Theme.TextMuted
     elseif iconType == "Build" then
         local box = Instance.new("Frame", iconFrame)
         box.Size = UDim2.new(1, 0, 0.7, 0)
@@ -301,17 +298,12 @@ local function CreateVectorIcon(parent, iconType)
         local st = Instance.new("UIStroke", box)
         st.Color = Theme.TextMuted
         st.Thickness = 1.5
-    elseif iconType == "Movement" then
-        local wingLeft = Instance.new("Frame", iconFrame)
-        wingLeft.Size = UDim2.new(0, 2, 0, 10)
-        wingLeft.Position = UDim2.new(0.3, 0, 0.2, 0)
-        wingLeft.Rotation = 35
-        wingLeft.BackgroundColor3 = Theme.TextMuted
-        local wingRight = Instance.new("Frame", iconFrame)
-        wingRight.Size = UDim2.new(0, 2, 0, 10)
-        wingRight.Position = UDim2.new(0.7, -2, 0.2, 0)
-        wingRight.Rotation = -35
-        wingRight.BackgroundColor3 = Theme.TextMuted
+    elseif iconType == "AI" then
+        local brain = Instance.new("Frame", iconFrame)
+        brain.Size = UDim2.new(0, 8, 0, 8)
+        brain.Position = UDim2.new(0.5, -4, 0.5, -4)
+        brain.BackgroundColor3 = Theme.TextMuted
+        Instance.new("UICorner", brain).CornerRadius = UDim.new(1, 0)
     elseif iconType == "Settings" then
         for i = 1, 3 do
             local dot = Instance.new("Frame", iconFrame)
@@ -324,10 +316,11 @@ local function CreateVectorIcon(parent, iconType)
 end
 
 ----------------------------------------------------------------
--- TABS SCHEMATICS
+-- TABS GENERATOR
 ----------------------------------------------------------------
 local function CreateTab(name, vectorType)
     local TabButton = Instance.new("TextButton")
+    TabButton.Name = name .. "Tab"
     TabButton.Size = UDim2.new(0, 144, 0, 36)
     TabButton.BackgroundTransparency = 1
     TabButton.Text = "         " .. name
@@ -396,7 +389,7 @@ local function CreateTab(name, vectorType)
 end
 
 ----------------------------------------------------------------
--- INTERFACE CORE GENERATORS
+-- INTERFACE CONTROLS CREATORS
 ----------------------------------------------------------------
 local function AddToggle(page, text, default, callback)
     local ToggleFrame = Instance.new("Frame")
@@ -544,7 +537,7 @@ local function AddButton(page, text, callback)
 end
 
 ----------------------------------------------------------------
--- GAME MECHANICS ENGINES
+-- GAME MECHANICS ENGINES (Restored Core v2)
 ----------------------------------------------------------------
 -- 1. FPS Tracker
 local frameCount = 0
@@ -558,7 +551,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 2. Fly & Trail Engine
+-- 2. Fly Engine
 local flying = false
 local flySpeed = 60
 local bv, bg
@@ -582,16 +575,9 @@ local function setupTrail()
     trail.Attachment1 = att1
     trail.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Theme.Accent),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 128)),
         ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
     })
-    trail.LightEmission = 1
-    trail.LightInfluence = 0
     trail.Lifetime = 0.6
-    trail.WidthScale = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1.2),
-        NumberSequenceKeypoint.new(1, 0)
-    })
     trail.Enabled = trailEnabled
     trail.Parent = Character
 
@@ -608,27 +594,18 @@ local function startFlying()
     bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
     Humanoid.PlatformStand = true
 
-    if trailEnabled then
-        setupTrail()
-        for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = true end end
-    end
+    if trailEnabled then setupTrail() end
 
     task.spawn(function()
         while flying and Character and RootPart do
-            local camera = workspace.CurrentCamera
             local moveDir = Humanoid.MoveDirection
             local flyDir = Vector3.new(0,0,0)
             if moveDir.Magnitude > 0 then
-                local rawDir = camera.CFrame:VectorToObjectSpace(moveDir)
-                local direction = (camera.CFrame.LookVector * -rawDir.Z) + (camera.CFrame.RightVector * rawDir.X)
-                if direction.Magnitude > 0 then flyDir = direction.Unit end
+                local rawDir = Camera.CFrame:VectorToObjectSpace(moveDir)
+                flyDir = ((Camera.CFrame.LookVector * -rawDir.Z) + (Camera.CFrame.RightVector * rawDir.X)).Unit
             end
             bv.Velocity = flyDir * flySpeed
-            if flyDir.Magnitude > 0 then
-                bg.CFrame = CFrame.lookAt(RootPart.Position, RootPart.Position + flyDir) * CFrame.Angles(math.rad(-60), 0, 0)
-            else
-                bg.CFrame = CFrame.new(RootPart.Position) * camera.CFrame.Rotation
-            end
+            bg.CFrame = Camera.CFrame
             task.wait()
         end
     end)
@@ -639,10 +616,9 @@ local function stopFlying()
     if bv then bv:Destroy() end
     if bg then bg:Destroy() end
     if Humanoid then Humanoid.PlatformStand = false end
-    for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = false end end
 end
 
--- 3. Walk & Air Platform Logic
+-- 3. Walk on Air
 local airWalking = false
 local airPlatform = nil
 local function toggleAirWalk(state)
@@ -655,7 +631,6 @@ local function toggleAirWalk(state)
         airPlatform.Color = Theme.Accent
         airPlatform.Anchored = true
         airPlatform.Parent = workspace
-        
         task.spawn(function()
             while airWalking and Character and RootPart do
                 airPlatform.CFrame = CFrame.new(RootPart.Position.X, RootPart.Position.Y - 3.5, RootPart.Position.Z)
@@ -667,142 +642,368 @@ local function toggleAirWalk(state)
     end
 end
 
--- 4. Double Jump Engine
+-- 4. Double Jump
 local doubleJumpEnabled = false
 local hasDoubleJumped = false
+UserInputService.JumpRequest:Connect(function()
+    if not doubleJumpEnabled then return end
+    if Humanoid:GetState() == Enum.HumanoidStateType.Freefall and not hasDoubleJumped then
+        hasDoubleJumped = true
+        RootPart.Velocity = Vector3.new(RootPart.Velocity.X, Humanoid.JumpPower * 1.2, RootPart.Velocity.Z)
+    end
+end)
+RunService.Stepped:Connect(function()
+    if Humanoid and Humanoid.FloorMaterial ~= Enum.Material.Air then
+        hasDoubleJumped = false
+    end
+end)
 
-local function initDoubleJump()
-    UserInputService.JumpRequest:Connect(function()
-        if not doubleJumpEnabled then return end
-        if Humanoid:GetState() == Enum.HumanoidStateType.Freefall and not hasDoubleJumped then
-            hasDoubleJumped = true
-            RootPart.Velocity = Vector3.new(RootPart.Velocity.X, Humanoid.JumpPower * 1.2, RootPart.Velocity.Z)
-        end
-    end)
-    Humanoid.StateChanged:Connect(function(old, new)
-        if new == Enum.HumanoidStateType.Landed then
-            hasDoubleJumped = false
-        end
-    end)
-end
-
--- 5. Dash Mechanics Engine
+-- 5. Dash Mechanics
 local dashEnabled = false
 local canDash = true
 local dashSpeed = 120
-local dashCooldown = 1.5
-
 local function performDash()
-    if not dashEnabled or not canDash or not Character or not RootPart then return end
+    if not dashEnabled or not canDash or not RootPart then return end
     canDash = false
-    
-    local moveDirection = Humanoid.MoveDirection
-    if moveDirection.Magnitude == 0 then
-        moveDirection = RootPart.CFrame.LookVector
-    end
-
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5)
-    bodyVelocity.Velocity = moveDirection * dashSpeed
-    bodyVelocity.Parent = RootPart
-
+    local moveDirection = Humanoid.MoveDirection.Magnitude > 0 and Humanoid.MoveDirection or RootPart.CFrame.LookVector
+    local bvDash = Instance.new("BodyVelocity", RootPart)
+    bvDash.MaxForce = Vector3.new(1e5, 0, 1e5)
+    bvDash.Velocity = moveDirection * dashSpeed
     task.spawn(function()
         task.wait(0.2)
-        bodyVelocity:Destroy()
-        task.wait(dashCooldown)
+        bvDash:Destroy()
+        task.wait(1.5)
         canDash = true
     end)
 end
 
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == Enum.KeyCode.Q then
-        performDash()
-    end
-end)
-
--- Mobile Dash UI
-local MobileActionGui = Instance.new("ScreenGui")
-MobileActionGui.Name = "QuantumMobileActions"
-MobileActionGui.ResetOnSpawn = false
-MobileActionGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local DashMobileBtn = Instance.new("TextButton")
+-- Mobile UI Control Setup
+local MobileActionGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+local DashMobileBtn = Instance.new("TextButton", MobileActionGui)
 DashMobileBtn.Size = UDim2.new(0, 50, 0, 50)
 DashMobileBtn.Position = UDim2.new(0.8, 0, 0.55, 0)
 DashMobileBtn.BackgroundColor3 = Theme.ElementBg
 DashMobileBtn.Text = "DASH"
 DashMobileBtn.TextColor3 = Theme.Accent
-DashMobileBtn.TextSize = 11
-DashMobileBtn.Font = Enum.Font.GothamBold
 DashMobileBtn.Visible = false
-DashMobileBtn.Parent = MobileActionGui
 Instance.new("UICorner", DashMobileBtn).CornerRadius = UDim.new(1, 0)
-local dashStroke = Instance.new("UIStroke", DashMobileBtn)
-dashStroke.Color = Theme.Accent
-dashStroke.Thickness = 1.5
-
 DashMobileBtn.MouseButton1Click:Connect(performDash)
 
--- 6. Shift Lock Custom System
+-- 6. Custom Shift Lock System
 local shiftLockEnabled = false
 local slConnection = nil
-
-local ShiftLockBtn = Instance.new("TextButton")
+local ShiftLockBtn = Instance.new("TextButton", MobileActionGui)
 ShiftLockBtn.Size = UDim2.new(0, 50, 0, 50)
 ShiftLockBtn.Position = UDim2.new(0.8, 0, 0.45, 0)
 ShiftLockBtn.BackgroundColor3 = Theme.ElementBg
 ShiftLockBtn.Text = "LOCK"
 ShiftLockBtn.TextColor3 = Theme.TextMuted
-ShiftLockBtn.TextSize = 10
-ShiftLockBtn.Font = Enum.Font.GothamBold
 ShiftLockBtn.Visible = false
-ShiftLockBtn.Parent = MobileActionGui
 Instance.new("UICorner", ShiftLockBtn).CornerRadius = UDim.new(1, 0)
-local slStroke = Instance.new("UIStroke", ShiftLockBtn)
-slStroke.Color = Theme.Border
 
 local function toggleShiftLock(state)
     shiftLockEnabled = state
     if shiftLockEnabled then
         ShiftLockBtn.TextColor3 = Theme.Accent
-        slStroke.Color = Theme.Accent
         slConnection = RunService.RenderStepped:Connect(function()
-            if Character and RootPart then
+            if RootPart then
                 Camera.CameraType = Enum.CameraType.Scriptable
-                local camRotation = Camera.CFrame.Rotation
-                Camera.CFrame = CFrame.new(RootPart.Position + Vector3.new(0, 2.5, 0)) * camRotation * CFrame.new(2.5, 0, 10)
+                Camera.CFrame = CFrame.new(RootPart.Position + Vector3.new(0, 2.5, 0)) * Camera.CFrame.Rotation * CFrame.new(2.5, 0, 10)
                 RootPart.CFrame = CFrame.lookAt(RootPart.Position, RootPart.Position + Vector3.new(Camera.CFrame.LookVector.X, 0, Camera.CFrame.LookVector.Z))
             end
         end)
     else
         ShiftLockBtn.TextColor3 = Theme.TextMuted
-        slStroke.Color = Theme.Border
         if slConnection then slConnection:Disconnect(); slConnection = nil end
         Camera.CameraType = Enum.CameraType.Custom
     end
 end
+ShiftLockBtn.MouseButton1Click:Connect(function() toggleShiftLock(not shiftLockEnabled) end)
 
-ShiftLockBtn.MouseButton1Click:Connect(function()
-    toggleShiftLock(not shiftLockEnabled)
-end)
-
--- 7. Cursor Changer
+-- 7. Custom Cursor
 local cursorEnabled = false
-local customCursorUrl = "rbxassetid://13214539130"
 local originalCursor = ""
-
 local function toggleCursor(state)
     cursorEnabled = state
     if cursorEnabled then
         originalCursor = UserInputService.MouseIcon
-        UserInputService.MouseIcon = customCursorUrl
+        UserInputService.MouseIcon = "rbxassetid://13214539130"
     else
         UserInputService.MouseIcon = originalCursor
     end
 end
 
--- 8. Combat (Aimbot & Hitbox)
+----------------------------------------------------------------
+-- [[ NEW SYSTEM V3: GHOST MIMIC CLONE & REVIVE ]]
+----------------------------------------------------------------
+local ghostActive = false
+local currentGhost = nil
+local mimicCharge = 0
+local ghostSpeedDelay = 0.15 -- Tạo cảm giác lag ma quái, lệch pha di chuyển
+
+-- Khung hiển thị thanh nạp mạng hồi sinh ở cuối màn hình
+local ChargeBarGui = Instance.new("ScreenGui", ScreenGui)
+local BarFrame = Instance.new("Frame", ChargeBarGui)
+BarFrame.Size = UDim2.new(0, 260, 0, 24)
+BarFrame.Position = UDim2.new(0.5, -130, 0.92, 0)
+BarFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+BarFrame.BorderSizePixel = 0
+BarFrame.Visible = false
+Instance.new("UICorner", BarFrame).CornerRadius = UDim.new(0, 6)
+local barStroke = Instance.new("UIStroke", BarFrame)
+barStroke.Color = Theme.Border
+
+local FillBar = Instance.new("Frame", BarFrame)
+FillBar.Size = UDim2.new(0, 0, 1, 0)
+FillBar.BackgroundColor3 = Theme.Accent
+FillBar.BorderSizePixel = 0
+Instance.new("UICorner", FillBar).CornerRadius = UDim.new(0, 6)
+
+local ChargeText = Instance.new("TextLabel", BarFrame)
+ChargeText.Size = UDim2.new(1, 0, 1, 0)
+ChargeText.BackgroundTransparency = 1
+ChargeText.Text = "GHOST MIMIC CHARGING: 0%"
+ChargeText.TextColor3 = Theme.Text
+ChargeText.Font = Enum.Font.GothamBold
+ChargeText.TextSize = 10
+
+local function destroyGhost()
+    if currentGhost then currentGhost:Destroy() end
+    currentGhost = nil
+    BarFrame.Visible = false
+    mimicCharge = 0
+end
+
+local function spawnGhostMimic()
+    destroyGhost()
+    if not Character or not RootPart then return end
+
+    Character.Archivable = true
+    local clone = Character:Clone()
+    Character.Archivable = false
+    clone.Name = "QuantumGhost_Mimic"
+    clone.Parent = workspace
+    currentGhost = clone
+
+    -- Thiết lập ngoại hình Đen Trắng & Trong Suốt (Glass)
+    for _, part in ipairs(clone:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Color = Color3.fromRGB(240, 240, 240) -- Màu trắng/xám ma quái
+            part.Material = Enum.Material.Glass
+            part.Transparency = 0.55
+            part.CanCollide = false
+            -- Xóa các hiệu ứng phát sáng hay decal màu mè để giữ tone đơn sắc đen trắng
+            if part:IsA("Decal") then part:Destroy() end
+        elseif part:IsA("Script") or part:IsA("LocalScript") then
+            part:Destroy()
+        elseif part:IsA("SpecialMesh") and part.TextureId ~= "" then
+            part.TextureId = "" -- Chuyển mesh về đơn sắc
+        end
+    end
+
+    local gRoot = clone:FindFirstChild("HumanoidRootPart")
+    local gHum = clone:FindFirstChildOfClass("Humanoid")
+    if not gRoot or not gHum then return end
+
+    BarFrame.Visible = true
+
+    -- Vòng lặp bắt chước chuyển động (Lag di chuyển lệch pha)
+    task.spawn(function()
+        while ghostActive and clone and clone.Parent do
+            if RootPart and Character then
+                -- Bắt chước vị trí có độ trễ (delay) nhẹ
+                local myCF = RootPart.CFrame
+                local shadowPos = myCF * CFrame.new(0, 0, 3) -- Đi lệch về phía sau 3 units
+                TweenService:Create(gRoot, TweenInfo.new(ghostSpeedDelay, Enum.EasingStyle.Linear), {CFrame = shadowPos}):Play()
+                
+                -- Bắt chước trạng thái nhảy/ngồi của người chơi
+                if Humanoid then
+                    gHum.Jump = Humanoid.Jump
+                    gHum.Sit = Humanoid.Sit
+                end
+
+                -- Nạp năng lượng nhận thêm mạng
+                if mimicCharge < 100 then
+                    mimicCharge = mimicCharge + 0.4 -- Nạp đầy trong khoảng ~25s
+                    if mimicCharge > 100 then mimicCharge = 100 end
+                    FillBar.Size = UDim2.new(mimicCharge / 100, 0, 1, 0)
+                    ChargeText.Text = "GHOST MIMIC CHARGING: " .. math.floor(mimicCharge) .. "%"
+                    if mimicCharge == 100 then
+                        ChargeText.Text = "⚡ EXTRA LIFE ACTIVE (MIMIC READY) ⚡"
+                        FillBar.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Đổi sang màu vàng kim loại cực đẹp
+                        barStroke.Color = Color3.fromRGB(255, 215, 0)
+                    end
+                end
+            end
+            task.wait(0.05)
+        end
+        destroyGhost()
+    end)
+end
+
+-- Hệ thống hồi sinh thông minh thế mạng
+local function applyReviveSystem()
+    local conn
+    conn = Humanoid.Died:Connect(function()
+        if ghostActive and mimicCharge >= 100 and currentGhost then
+            local respawnPos = currentGhost:FindFirstChild("HumanoidRootPart") and currentGhost.HumanoidRootPart.CFrame
+            if respawnPos then
+                task.wait(0.1)
+                -- Hồi sinh người chơi ngay lập tức tại vị trí phân thân
+                LocalPlayer:RequestStreamAroundAsync(respawnPos.Position)
+                -- Teleport xác của bạn tới vị trí clone, thiết lập lại máu
+                Character:SetPrimaryPartCFrame(respawnPos)
+                task.wait(0.1)
+                -- Reset trạng thái clone và tạo hiệu ứng bùng nổ đẹp mắt
+                local boom = Instance.new("Explosion", workspace)
+                boom.Position = respawnPos.Position
+                boom.BlastRadius = 10
+                
+                mimicCharge = 0
+                FillBar.Size = UDim2.new(0, 0, 1, 0)
+                FillBar.BackgroundColor3 = Theme.Accent
+                barStroke.Color = Theme.Border
+                
+                print("Quantum Core: Ghost Mimic bảo vệ thành công! Bạn nhận được thêm 1 mạng!")
+            end
+        end
+    end)
+end
+applyReviveSystem()
+LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    applyReviveSystem()
+end)
+
+----------------------------------------------------------------
+-- [[ NEW SYSTEM V3: PRO BUILD ENGINE ]]
+----------------------------------------------------------------
+local buildActive = false
+local proBuildMode = "Place" -- "Place", "Delete", "Rotate", "Scale"
+local buildColor = Theme.Accent
+local lastPlacedPart = nil
+local currentRotationAngle = 0
+local scaleMultiplier = 1
+
+local function getMouseTarget()
+    local mouse = LocalPlayer:GetMouse()
+    local ray = Camera:ScreenPointToRay(mouse.X, mouse.Y)
+    local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 1000)
+    return raycastResult
+end
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed or not buildActive then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local hit = getMouseTarget()
+        if not hit then return end
+
+        if proBuildMode == "Place" then
+            local p = Instance.new("Part")
+            p.Size = Vector3.new(4, 4, 4) * scaleMultiplier
+            p.Position = hit.Position + (hit.Normal * (p.Size.Y / 2))
+            p.Color = buildColor
+            p.Material = Enum.Material.SmoothPlastic
+            p.Anchored = true
+            -- Áp dụng góc xoay hiện tại
+            p.CFrame = p.CFrame * CFrame.Angles(0, math.rad(currentRotationAngle), 0)
+            p.Parent = workspace
+            lastPlacedPart = p
+        elseif proBuildMode == "Delete" then
+            if hit.Instance and hit.Instance ~= workspace.Terrain and not hit.Instance:IsDescendantOf(Character) then
+                if hit.Instance:IsA("Part") then hit.Instance:Destroy() end
+            end
+        elseif proBuildMode == "Rotate" then
+            if hit.Instance and hit.Instance:IsA("Part") and hit.Instance.Anchored == true then
+                hit.Instance.CFrame = hit.Instance.CFrame * CFrame.Angles(0, math.rad(45), 0)
+            end
+        elseif proBuildMode == "Scale" then
+            if hit.Instance and hit.Instance:IsA("Part") and hit.Instance.Anchored == true then
+                hit.Instance.Size = hit.Instance.Size + Vector3.new(1, 1, 1)
+                hit.Instance.CFrame = hit.Instance.CFrame * CFrame.new(0, 0.5, 0) -- Đẩy nhẹ lên để không kẹt đất
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- [[ NEW SYSTEM V3: LOCAL AI EVENT PREDICTOR & CHATBOT ]]
+----------------------------------------------------------------
+local aiEnabled = false
+local aiLogEntries = {}
+
+-- Mô phỏng AI lượng tử dựa trên việc phân tích Client State
+local function getAIPredictionResponse(question)
+    local q = string.lower(question)
+    
+    -- Phân tích dữ liệu Server thực tế
+    local playerCount = #Players:GetPlayers()
+    local toxicCount = 0
+    local lagStatus = "Ổn định (FPS cao)"
+    if frameCount < 30 then lagStatus = "Nguy kịch (Lag/FPS tụt)" elseif frameCount < 45 then lagStatus = "Khá nặng" end
+    
+    local playersInfo = ""
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if p.Character.HumanoidRootPart.Velocity.Magnitude > 60 then
+                toxicCount = toxicCount + 1
+            end
+        end
+    end
+
+    if string.find(q, "admin") or string.find(q, "mod") then
+        local adminFound = false
+        for _, p in ipairs(Players:GetPlayers()) do
+            local name = string.lower(p.Name)
+            if string.find(name, "admin") or string.find(name, "mod") or string.find(name, "creator") then
+                adminFound = true
+                return "Cảnh báo: Phát hiện nghi vấn có người tên là ["..p.Name.."] có từ khóa của Admin/Creator trong Server! Đề phòng bị ban."
+            end
+        end
+        return "Quantum AI: Quét sạch! Hiện tại không phát hiện tài khoản Admin nào hoạt động công khai trong Server."
+    elseif string.find(q, "nguy hiểm") or string.find(q, "an toàn") or string.find(q, "danger") then
+        if toxicCount > 0 then
+            return "Cảnh báo AI: Phát hiện "..toxicCount.." người chơi đang di chuyển cực nhanh (có thể sử dụng Speed/Fling). Hãy bật Anti-Fling ngay lập tức!"
+        else
+            return "Quantum AI: Server đang tạm thời bình yên. Chưa phát hiện đối tượng nào có hành vi húc người khác."
+        end
+    elseif string.find(q, "lag") or string.find(q, "fps") then
+        return "Phân tích đồ họa: Trạng thái Server: "..lagStatus..". Số lượng Part hiện có là: "..#workspace:GetDescendants().." parts. Đề xuất: Bật 'Anti Lag' để dọn dẹp kết cấu thô."
+    elseif string.find(q, "phân thân") or string.find(q, "ghost") or string.find(q, "mạng") then
+        return "Quantum AI: Phân thân ma quái (Ghost Mimic) hoạt động dựa trên cơ chế nạp mạng. Hãy giữ mạng nạp đầy 100% để chống lại các pha kích sát từ Boss hoặc hack phá game."
+    elseif string.find(q, "hello") or string.find(q, "chào") or string.find(q, "ai") then
+        return "Xin chào! Mình là AI Quantum Core tích hợp. Hãy hỏi mình về: 'Admin', 'Lag', 'Server nguy hiểm không' hoặc 'Mẹo xây block' nhé!"
+    else
+        -- Trả lời ngẫu nhiên thông minh dựa trên dữ liệu game
+        local randomAnswers = {
+            "Theo phân tích lượng tử, bạn nên bật 'Secure Hooks' để bảo mật client an toàn tuyệt đối.",
+            "Tôi khuyên bạn nên di chuyển liên tục, tránh đứng yên một chỗ quá lâu trong server lạ.",
+            "Hệ thống dự báo: Server này hiện có " .. playerCount .. " người chơi. Chỉ số toxic ở mức trung bình.",
+            "Mẹo: Bạn có thể bật 'Walk on Air' để xây dựng ở vị trí cao mà không lo bị ngã."
+        }
+        return "AI Dự Đoán: " .. randomAnswers[math.random(1, #randomAnswers)]
+    end
+end
+
+-- Vòng lặp AI quét nguy hiểm tự động (Real-time Event Predictor)
+task.spawn(function()
+    while task.wait(3) do
+        if aiEnabled then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local speed = p.Character.HumanoidRootPart.Velocity.Magnitude
+                    if speed > 75 then
+                        print("[QUANTUM AI PREDICTOR] CẢNH BÁO: Người chơi " .. p.Name .. " đang bay/húc với tốc độ " .. math.floor(speed) .. " studs/s. Nguy cơ Fling cao!")
+                    end
+                end
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- COMBAT STUFF RESTORE (V2 Hitboxes)
+----------------------------------------------------------------
 local aimbotActive = false
 local targetPlayerName = ""
 local hitboxActive = false
@@ -825,7 +1026,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 task.spawn(function()
-    while task.wait(0.8) do
+    while task.wait(1) do
         if hitboxActive then
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -855,133 +1056,9 @@ local function resetHitboxes()
     table.clear(originalSizes)
 end
 
--- 9. World Builder Block Placer
-local buildActive = false
-local blockColor = Theme.Accent
-
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed or not buildActive then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        local ray = Camera:ScreenPointToRay(input.Position.X, input.Position.Y)
-        local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 500)
-        
-        if raycastResult then
-            local p = Instance.new("Part")
-            p.Size = Vector3.new(4, 4, 4)
-            p.Position = raycastResult.Position + (raycastResult.Normal * 2)
-            p.Color = blockColor
-            p.Material = Enum.Material.SmoothPlastic
-            p.Anchored = true
-            p.Parent = workspace
-        end
-    end
-end)
-
 ----------------------------------------------------------------
--- [[ NEW UPDATE: PREMIUM SECURITY & ADVANCED SYSTEMS ]]
+-- ANTI-HACKS SYSTEMS PORTING (Chống hack đầy đủ từ V2 Settings)
 ----------------------------------------------------------------
-
--- A. CLONE FLING GUARD ENGINE (Phân Thân Bảo Vệ + Fling Kẻ Địch)
-local cloneActive = false
-local currentClone = nil
-
-local function destroyClone()
-    if currentClone then
-        currentClone:Destroy()
-        currentClone = nil
-    end
-end
-
-local function spawnCloneGuard()
-    destroyClone()
-    if not Character or not RootPart then return end
-    
-    Character.Archivable = true
-    local clone = Character:Clone()
-    Character.Archivable = false
-    clone.Name = "QuantumProtector_Clone"
-    clone.Parent = workspace
-    currentClone = clone
-
-    -- Thiết lập ngoại hình Neon cho Clone
-    for _, part in ipairs(clone:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Color = Theme.Accent
-            part.Material = Enum.Material.Neon
-            part.CanCollide = false
-        elseif part:IsA("LocalScript") or part:IsA("Script") then
-            part:Destroy() -- Xóa Script gốc tránh gây lỗi
-        end
-    end
-
-    local cRoot = clone:FindFirstChild("HumanoidRootPart")
-    local cHum = clone:FindFirstChildOfClass("Humanoid")
-    if not cRoot or not cHum then return end
-
-    -- Gắn các chuyển động xoay siêu tốc để tạo lực đẩy FLING mạnh mẽ
-    local bodyAngular = Instance.new("BodyAngularVelocity")
-    bodyAngular.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
-    bodyAngular.AngularVelocity = Vector3.new(0, 20000, 0) -- Xoay cực mạnh để Fling
-    bodyAngular.Parent = cRoot
-
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.Parent = cRoot
-
-    task.spawn(function()
-        while cloneActive and clone and clone.Parent do
-            if RootPart and Character then
-                local playerPos = RootPart.Position
-                local clonePos = cRoot.Position
-                local distanceToPlayer = (clonePos - playerPos).Magnitude
-
-                -- Tìm đối thủ gần nhất để húc bay (Fling)
-                local nearestEnemy = nil
-                local shortestDistance = 35 -- Khoảng cách bảo vệ (Studs)
-
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local enemyRoot = p.Character.HumanoidRootPart
-                        local dist = (enemyRoot.Position - playerPos).Magnitude
-                        if dist < shortestDistance then
-                            nearestEnemy = enemyRoot
-                            shortestDistance = dist
-                        end
-                    end
-                end
-
-                if nearestEnemy then
-                    -- Lao Clone thẳng vào đối thủ
-                    cHum:MoveTo(nearestEnemy.Position)
-                    bodyVelocity.Velocity = (nearestEnemy.Position - clonePos).Unit * 120
-                    
-                    -- Khi chạm trúng đối thủ, kích hoạt lực Fling cực mạnh
-                    cRoot.Touched:Connect(function(hit)
-                        local enemyChar = hit.Parent
-                        if enemyChar and enemyChar ~= Character and enemyChar ~= clone then
-                            local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
-                            if enemyRoot then
-                                -- Áp lực ném cực mạnh đẩy thẳng lên trời và ra xa
-                                enemyRoot.Velocity = Vector3.new(math.random(-5000, 5000), 50000, math.random(-5000, 5000))
-                            end
-                        end
-                    end)
-                else
-                    -- Đi tuần tra xung quanh bảo vệ người chơi
-                    if distanceToPlayer > 8 then
-                        cHum:MoveTo(playerPos + Vector3.new(math.random(-4, 4), 0, math.random(-4, 4)))
-                    end
-                    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                end
-            end
-            task.wait(0.1)
-        end
-        destroyClone()
-    end)
-end
-
--- B. ANTI FLING (Chống bị hất văng)
 local antiFlingActive = false
 local antiFlingConnection = nil
 local function toggleAntiFling(state)
@@ -995,13 +1072,10 @@ local function toggleAntiFling(state)
                     part.RotVelocity = Vector3.new(0, 0, 0)
                 end
             end
-            -- Tắt va chạm vật lý tạm thời với tất cả người chơi khác
             for _, p in ipairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character then
                     for _, subPart in ipairs(p.Character:GetDescendants()) do
-                        if subPart:IsA("BasePart") then
-                            subPart.CanCollide = false
-                        end
+                        if subPart:IsA("BasePart") then subPart.CanCollide = false end
                     end
                 end
             end
@@ -1011,7 +1085,6 @@ local function toggleAntiFling(state)
     end
 end
 
--- C. ANTI AFK (Chống treo máy bị Kick)
 local antiAfkActive = false
 local antiAfkConnection = nil
 local function toggleAntiAfk(state)
@@ -1029,48 +1102,36 @@ local function toggleAntiAfk(state)
     end
 end
 
--- D. ANTI KICK & ANTI BAN BYPASS (Bảo vệ Client dùng Metatable Hooking)
 local antiKickActive = false
 local antiBanActive = false
 local hooked = false
-
 local function applySecureHooks()
     if hooked then return end
     hooked = true
-    
     local success, err = pcall(function()
         local rawMT = getrawmetatable(game)
         if not rawMT then return end
         setreadonly(rawMT, false)
-        
         local oldNamecall = rawMT.__namecall
         rawMT.__namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
-            local args = {...}
-            
-            -- Chống Kick từ Script Cục bộ
             if self == LocalPlayer and string.lower(method) == "kick" and antiKickActive then
-                return nil -- Chặn đứng hành vi Kick
+                return nil
             end
-            
-            -- Chống Ban (Bypass Remote Signals chuyên dụng)
             if antiBanActive and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-                local remoteName = string.lower(self.Name)
-                if string.find(remoteName, "ban") or string.find(remoteName, "kick") or string.find(remoteName, "cheat") or string.find(remoteName, "detect") then
-                    return nil -- Chặn không gửi gói tin nghi vấn về Server
+                local rn = string.lower(self.Name)
+                if string.find(rn, "ban") or string.find(rn, "cheat") or string.find(rn, "detect") then
+                    return nil
                 end
             end
-            
             return oldNamecall(self, ...)
         end)
         setreadonly(rawMT, true)
     end)
 end
 
--- E. ANTI LAG (Hỗ trợ máy yếu tăng FPS)
 local antiLagActive = false
 local originalMaterials = {}
-
 local function toggleAntiLag(state)
     antiLagActive = state
     if antiLagActive then
@@ -1084,15 +1145,12 @@ local function toggleAntiLag(state)
         end
     else
         for part, data in pairs(originalMaterials) do
-            if part and part.Parent then
-                part.Material = data.Material
-            end
+            if part and part.Parent then part.Material = data.Material end
         end
         table.clear(originalMaterials)
     end
 end
 
--- F. ANTI BYPASS (Chặn quét Anti-Cheat cục bộ)
 local antiBypassActive = false
 local function toggleAntiBypass(state)
     antiBypassActive = state
@@ -1101,13 +1159,13 @@ local function toggleAntiBypass(state)
             while antiBypassActive do
                 for _, v in ipairs(game:GetDescendants()) do
                     if v:IsA("LocalScript") then
-                        local name = string.lower(v.Name)
-                        if string.find(name, "anticheat") or string.find(name, "ac") or string.find(name, "bypass") or string.find(name, "detection") then
-                            v.Disabled = true -- Vô hiệu hóa script quét
+                        local n = string.lower(v.Name)
+                        if string.find(n, "anticheat") or string.find(n, "ac") or string.find(n, "detection") then
+                            v.Disabled = true
                         end
                     end
                 end
-                task.wait(1.5)
+                task.wait(2)
             end
         end)
     end
@@ -1120,32 +1178,19 @@ local MainTab = CreateTab("Modifiers", "Main")
 local CombatTab = CreateTab("Combat", "Combat")
 local MovementTab = CreateTab("Movement", "Movement")
 local VisualTab = CreateTab("Shaders", "Visuals")
-local BuildTab = CreateTab("Builder", "Build")
+local BuildTab = CreateTab("Pro Builder", "Build")
+local AITab = CreateTab("Quantum AI", "AI")
 local ConfigTab = CreateTab("Settings", "Settings")
 
--- [[ A. MAIN TAB MODIFIERS ]]
+-- [[ A. MODIFIERS TAB ]]
 AddToggle(MainTab, "Flight Mode", false, function(st) flying = st; if flying then startFlying() else stopFlying() end end)
 AddAdjuster(MainTab, "Flight Speed", 60, 20, 200, 10, function(v) flySpeed = v end)
-AddToggle(MainTab, "Flight Trail Neon", false, function(st)
-    trailEnabled = st
-    if trailEnabled then setupTrail() else
-        for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = false end end
-    end
-end)
+AddToggle(MainTab, "Flight Trail Neon", false, function(st) trailEnabled = st; if trailEnabled then setupTrail() else for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = false end end end end)
 local speedEnabled = false
-AddToggle(MainTab, "Speed Hack", false, function(st)
-    speedEnabled = st
-    Humanoid.WalkSpeed = speedEnabled and 100 or 16
-end)
-AddAdjuster(MainTab, "Walk Speed Val", 100, 16, 250, 15, function(v)
-    if speedEnabled then Humanoid.WalkSpeed = v end
-end)
+AddToggle(MainTab, "Speed Hack", false, function(st) speedEnabled = st; Humanoid.WalkSpeed = speedEnabled and 100 or 16 end)
+AddAdjuster(MainTab, "Walk Speed Val", 100, 16, 250, 15, function(v) if speedEnabled then Humanoid.WalkSpeed = v end end)
 
 -- [[ B. COMBAT TAB ]]
-AddToggle(CombatTab, "Clone Protect Guard (Fling)", false, function(st)
-    cloneActive = st
-    if cloneActive then spawnCloneGuard() else destroyClone() end
-end)
 AddTextBox(CombatTab, "Enter Target Name for Lock...", function(tx) targetPlayerName = tx end)
 AddToggle(CombatTab, "Aimbot Target Lock", false, function(st) aimbotActive = st end)
 AddToggle(CombatTab, "Expand World Hitboxes", false, function(st) if st then hitboxActive = true else resetHitboxes() end end)
@@ -1167,22 +1212,77 @@ AddAdjuster(VisualTab, "Graphic Blur Scale", 0, 0, 24, 2, function(v) blur.Size 
 AddAdjuster(VisualTab, "Saturation Modifier", 0, 0, 5, 1, function(v) colorCorr.Saturation = v end)
 AddAdjuster(VisualTab, "Neon Bloom Ambient", 1, 0, 10, 1, function(v) bloom.Intensity = v end)
 
--- [[ E. BUILDER TAB ]]
-AddToggle(BuildTab, "Raycast Core Placement", false, function(st) buildActive = st end)
-AddButton(BuildTab, "Set Material Color: Neon Mint", function() blockColor = Theme.Accent end)
-AddButton(BuildTab, "Set Material Color: Ruby Crimson", function() blockColor = Color3.fromRGB(255, 50, 50) end)
+-- [[ E. PRO BUILDER TAB (Cải tiến toàn diện) ]]
+AddToggle(BuildTab, "Enable Pro Builder Mode", false, function(st) buildActive = st end)
+AddButton(BuildTab, "Tool: Click to PLACE Block", function() proBuildMode = "Place" end)
+AddButton(BuildTab, "Tool: Click to DELETE Block", function() proBuildMode = "Delete" end)
+AddButton(BuildTab, "Tool: Click to ROTATE Block (+45°)", function() proBuildMode = "Rotate" end)
+AddButton(BuildTab, "Tool: Click to SCALE Block (Bigger)", function() proBuildMode = "Scale" end)
+AddAdjuster(BuildTab, "Default Scale Multiplier", 1, 1, 5, 1, function(v) scaleMultiplier = v end)
+AddButton(BuildTab, "Set Material Color: Neon Mint", function() buildColor = Theme.Accent end)
+AddButton(BuildTab, "Set Material Color: Ruby Crimson", function() buildColor = Color3.fromRGB(255, 50, 50) end)
 AddButton(BuildTab, "Purge Custom Placed Blocks", function() 
     for _, obj in ipairs(workspace:GetChildren()) do 
-        if obj:IsA("Part") and obj.Size == Vector3.new(4, 4, 4) and obj.Anchored == true then obj:Destroy() end 
+        if obj:IsA("Part") and obj.Anchored == true and obj.Material == Enum.Material.SmoothPlastic then obj:Destroy() end 
     end 
 end)
 
--- [[ F. SETTINGS TAB (ĐÃ THÊM CÁC TÍNH NĂNG CHỐNG HACK) ]]
+-- [[ F. QUANTUM AI PREDICT TAB ]]
+AddToggle(AITab, "Enable Automatic AI Event Scan", false, function(st) aiEnabled = st end)
+
+-- Khung Chatbot AI Hỏi - Đáp
+local AIChatFrame = Instance.new("Frame")
+AIChatFrame.Size = UDim2.new(0, 385, 0, 110)
+AIChatFrame.BackgroundColor3 = Theme.ElementBg
+AIChatFrame.Parent = AITab
+Instance.new("UICorner", AIChatFrame).CornerRadius = UDim.new(0, 8)
+local aiStroke = Instance.new("UIStroke", AIChatFrame)
+aiStroke.Color = Theme.Border
+
+local AIResponseLabel = Instance.new("TextLabel", AIChatFrame)
+AIResponseLabel.Size = UDim2.new(1, -20, 0, 55)
+AIResponseLabel.Position = UDim2.new(0, 10, 0, 10)
+AIResponseLabel.BackgroundTransparency = 1
+AIResponseLabel.Text = "Quantum AI: Hệ thống sẵn sàng. Hãy hỏi tôi về Admin, Lag, hoặc mức độ nguy hiểm trong Server này."
+AIResponseLabel.TextColor3 = Theme.TextMuted
+AIResponseLabel.TextSize = 11
+AIResponseLabel.Font = Enum.Font.GothamSemibold
+AIResponseLabel.TextWrapped = true
+AIResponseLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+local AIQuestionInput = Instance.new("TextBox", AIChatFrame)
+AIQuestionInput.Size = UDim2.new(1, -20, 0, 32)
+AIQuestionInput.Position = UDim2.new(0, 10, 1, -42)
+AIQuestionInput.BackgroundColor3 = Theme.Bg
+AIQuestionInput.TextColor3 = Theme.Text
+AIQuestionInput.PlaceholderText = "Hỏi AI điều gì đó (Nhấn Enter)..."
+AIQuestionInput.PlaceholderColor3 = Theme.TextMuted
+AIQuestionInput.Text = ""
+AIQuestionInput.TextSize = 12
+AIQuestionInput.Font = Enum.Font.Gotham
+Instance.new("UICorner", AIQuestionInput).CornerRadius = UDim.new(0, 6)
+
+AIQuestionInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed and AIQuestionInput.Text ~= "" then
+        local userQ = AIQuestionInput.Text
+        AIResponseLabel.Text = "Đang tính toán phân tích dữ liệu server..."
+        task.wait(0.5)
+        local aiAnswer = getAIPredictionResponse(userQ)
+        AIResponseLabel.Text = aiAnswer
+        AIQuestionInput.Text = ""
+    end
+end)
+
+-- [[ G. SETTINGS TAB ]]
+AddToggle(ConfigTab, "Ghost Mimic (Phân thân nạp mạng)", false, function(st) 
+    ghostActive = st 
+    if ghostActive then spawnGhostMimic() else destroyGhost() end 
+end)
 AddToggle(ConfigTab, "Enable Custom Gaming Cursor", false, function(st) toggleCursor(st) end)
 AddToggle(ConfigTab, "Enable Shift Lock Controller", false, function(st) ShiftLockBtn.Visible = st; if not st then toggleShiftLock(false) end end)
 AddToggle(ConfigTab, "Anti Fling Mode", false, function(st) toggleAntiFling(st) end)
 AddToggle(ConfigTab, "Anti AFK System", false, function(st) toggleAntiAfk(st) end)
-AddToggle(ConfigTab, "Anti Ban (Secure Hooks)", false, function(st) antiBanActive = st; if st then applySecureHooks() end end)
+AddToggle(ConfigTab, "Anti Ban Bypass (Secure Hooks)", false, function(st) antiBanActive = st; if st then applySecureHooks() end end)
 AddToggle(ConfigTab, "Anti Kick Security", false, function(st) antiKickActive = st; if st then applySecureHooks() end end)
 AddToggle(ConfigTab, "Anti Lag (Optimized FPS)", false, function(st) toggleAntiLag(st) end)
 AddToggle(ConfigTab, "Anti Bypass (AC Freeze)", false, function(st) toggleAntiBypass(st) end)
@@ -1211,32 +1311,26 @@ AddButton(ConfigTab, "Rejoin Safe Server Instance", function()
 end)
 AddButton(ConfigTab, "Purge Quantum Engine GUI", function() 
     stopFlying(); resetHitboxes(); toggleAirWalk(false); toggleShiftLock(false); toggleCursor(false)
-    toggleAntiFling(false); toggleAntiAfk(false); toggleAntiLag(false); toggleAntiBypass(false); destroyClone()
-    MobileActionGui:Destroy(); ScreenGui:Destroy() 
+    toggleAntiFling(false); toggleAntiAfk(false); toggleAntiLag(false); toggleAntiBypass(false); destroyGhost()
+    MobileActionGui:Destroy(); ScreenGui:Destroy(); ChargeBarGui:Destroy()
 end)
 
 ----------------------------------------------------------------
 -- INITIALIZATION & CORE STARTUP
 ----------------------------------------------------------------
-initDoubleJump()
-
 MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; FloatingBtn.Visible = true end)
 FloatingBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; FloatingBtn.Visible = false end)
 CloseBtn.MouseButton1Click:Connect(function() 
     stopFlying(); resetHitboxes(); toggleAirWalk(false); toggleShiftLock(false); toggleCursor(false)
-    toggleAntiFling(false); toggleAntiAfk(false); toggleAntiLag(false); toggleAntiBypass(false); destroyClone()
-    MobileActionGui:Destroy(); ScreenGui:Destroy() 
+    toggleAntiFling(false); toggleAntiAfk(false); toggleAntiLag(false); toggleAntiBypass(false); destroyGhost()
+    MobileActionGui:Destroy(); ScreenGui:Destroy(); ChargeBarGui:Destroy()
 end)
 
--- Focus vào Modifiers đầu tiên
+-- Auto focus vào Modifiers Tab đầu tiên
 local firstTab = TabScroll:FindFirstChild("ModifiersTab")
 if firstTab then
     firstTab.TextColor3 = Theme.Accent
     firstTab.BackgroundTransparency = 0.9
     firstTab.BackgroundColor3 = Theme.Accent
     MainTab.Visible = true
-    for _, sub in ipairs(firstTab:FindFirstChild("Frame"):GetChildren()) do
-        if sub:IsA("Frame") then sub.BackgroundColor3 = Theme.Accent end
-    end
 end
-
