@@ -1334,3 +1334,12 @@ if firstTab then
     firstTab.BackgroundColor3 = Theme.Accent
     MainTab.Visible = true
 end
+-- [[ D. SHADER CONTROLS ]]
+local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect", Lighting)
+local blur = Lighting:FindFirstChildOfClass("BlurEffect") or Instance.new("BlurEffect", Lighting)
+local colorCorr = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect", Lighting)
+
+AddAdjuster(VisualTab, "Map Lighting Brightness", 2, 0, 10, 1, function(v) Lighting.Brightness = v end)
+AddAdjuster(VisualTab, "Graphic Blur Scale", 0, 0, 24, 2, function(v) blur.Size = v end)
+AddAdjuster(VisualTab, "Saturation Modifier", 0, 0, 5, 1, function(v) colorCorr.Saturation = v end)
+AddAdjuster(VisualTab, "Neon Bloom Ambient", 1, 0, 10, 1, function(v) bloom.Intensity = v end)
