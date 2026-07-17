@@ -1,6 +1,5 @@
--- [[ QUANTUM CORE PREMIUM HUB V2 ]] --
--- Fixed UI Positioning, Custom Cursor, Shift Lock, Dash & Double Jump
--- Fully Optimized for Mobile (Delta/Codex) and PC
+-- [[ QUANTUM CORE PREMIUM HUB V2 - ANTI & CLONE UPDATE ]] --
+-- Fixed UI Positioning, Custom Cursor, Shift Lock, Dash, Double Jump, Clone Guard & Anti-Cheats
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -41,7 +40,7 @@ ScreenGui.IgnoreGuiInset = true
 pcall(function() syn.protect_gui(ScreenGui) end)
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Main Window (Wider layout for aesthetic balance)
+-- Main Window (Sửa lỗi layout, thiết kế sang xịn mịn hơn)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 580, 0, 390)
@@ -115,7 +114,7 @@ Divider.BackgroundColor3 = Theme.Border
 Divider.Parent = MainFrame
 
 ----------------------------------------------------------------
--- SIDEBAR (FIXED: User Profile at Top, Tabs List below it)
+-- SIDEBAR (ĐÃ FIX: Đưa User Card lên đầu để không bị đè nút)
 ----------------------------------------------------------------
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 160, 1, -43)
@@ -128,7 +127,6 @@ local SidebarCorner = Instance.new("UICorner")
 SidebarCorner.CornerRadius = UDim.new(0, 12)
 SidebarCorner.Parent = Sidebar
 
--- Patches corner issues
 local SidebarPatch = Instance.new("Frame")
 SidebarPatch.Size = UDim2.new(0, 15, 1, 0)
 SidebarPatch.Position = UDim2.new(1, -15, 0, 0)
@@ -136,7 +134,7 @@ SidebarPatch.BackgroundColor3 = Theme.Sidebar
 SidebarPatch.BorderSizePixel = 0
 SidebarPatch.Parent = Sidebar
 
--- USER CARD (Top-aligned in Sidebar!)
+-- USER CARD (Tuyệt đối nằm trên cùng, an toàn và trực quan)
 local UserInfoFrame = Instance.new("Frame")
 UserInfoFrame.Size = UDim2.new(0, 144, 0, 52)
 UserInfoFrame.Position = UDim2.new(0, 8, 0, 8)
@@ -187,7 +185,7 @@ AgeLabel.Font = Enum.Font.Gotham
 AgeLabel.TextXAlignment = Enum.TextXAlignment.Left
 AgeLabel.Parent = UserInfoFrame
 
--- Tab Buttons Scrolling Container (Positions below the User Card)
+-- Cuộn Tab ở phía dưới
 local TabScroll = Instance.new("ScrollingFrame")
 TabScroll.Size = UDim2.new(1, 0, 1, -70)
 TabScroll.Position = UDim2.new(0, 0, 0, 68)
@@ -210,7 +208,7 @@ Container.Position = UDim2.new(0, 170, 0, 48)
 Container.BackgroundTransparency = 1
 Container.Parent = MainFrame
 
--- Floating Icon
+-- Floating Icon để mở lại Hub
 local FloatingBtn = Instance.new("TextButton")
 FloatingBtn.Size = UDim2.new(0, 45, 0, 45)
 FloatingBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
@@ -256,7 +254,7 @@ applyDragSupport(MainFrame)
 applyDragSupport(FloatingBtn)
 
 ----------------------------------------------------------------
--- CUSTOM VECTOR ICONS (PRECISE DRAWING)
+-- CUSTOM VECTOR ICONS
 ----------------------------------------------------------------
 local function CreateVectorIcon(parent, iconType)
     local iconFrame = Instance.new("Frame")
@@ -266,7 +264,6 @@ local function CreateVectorIcon(parent, iconType)
     iconFrame.Parent = parent
 
     if iconType == "Main" then
-        -- Clean Diamond Node
         local d = Instance.new("Frame", iconFrame)
         d.Size = UDim2.new(0, 10, 0, 10)
         d.Position = UDim2.new(0.5, -5, 0.5, -5)
@@ -275,7 +272,6 @@ local function CreateVectorIcon(parent, iconType)
         d.BorderSizePixel = 0
         Instance.new("UICorner", d).CornerRadius = UDim.new(0, 2)
     elseif iconType == "Combat" then
-        -- Tactical Scope
         local outer = Instance.new("Frame", iconFrame)
         outer.Size = UDim2.new(1, 0, 1, 0)
         outer.BackgroundTransparency = 1
@@ -289,7 +285,6 @@ local function CreateVectorIcon(parent, iconType)
         center.BackgroundColor3 = Theme.TextMuted
         Instance.new("UICorner", center).CornerRadius = UDim.new(1, 0)
     elseif iconType == "Visuals" then
-        -- Modern Adjustment Sliders
         local line = Instance.new("Frame", iconFrame)
         line.Size = UDim2.new(1, 0, 0, 2)
         line.Position = UDim2.new(0, 0, 0.5, -1)
@@ -299,7 +294,6 @@ local function CreateVectorIcon(parent, iconType)
         block.Position = UDim2.new(0.2, 0, 0.5, -5)
         block.BackgroundColor3 = Theme.TextMuted
     elseif iconType == "Build" then
-        -- Wireframe Brick Isometric
         local box = Instance.new("Frame", iconFrame)
         box.Size = UDim2.new(1, 0, 0.7, 0)
         box.Position = UDim2.new(0, 0, 0.15, 0)
@@ -308,7 +302,6 @@ local function CreateVectorIcon(parent, iconType)
         st.Color = Theme.TextMuted
         st.Thickness = 1.5
     elseif iconType == "Movement" then
-        -- Movement Arrow Vectors
         local wingLeft = Instance.new("Frame", iconFrame)
         wingLeft.Size = UDim2.new(0, 2, 0, 10)
         wingLeft.Position = UDim2.new(0.3, 0, 0.2, 0)
@@ -320,7 +313,6 @@ local function CreateVectorIcon(parent, iconType)
         wingRight.Rotation = -35
         wingRight.BackgroundColor3 = Theme.TextMuted
     elseif iconType == "Settings" then
-        -- Gears / Interactive Nodes
         for i = 1, 3 do
             local dot = Instance.new("Frame", iconFrame)
             dot.Size = UDim2.new(0, 4, 0, 4)
@@ -338,7 +330,7 @@ local function CreateTab(name, vectorType)
     local TabButton = Instance.new("TextButton")
     TabButton.Size = UDim2.new(0, 144, 0, 36)
     TabButton.BackgroundTransparency = 1
-    TabButton.Text = "         " .. name -- Shifted right to prevent text clipping onto icons!
+    TabButton.Text = "         " .. name
     TabButton.TextColor3 = Theme.TextMuted
     TabButton.TextSize = 13
     TabButton.Font = Enum.Font.GothamSemibold
@@ -551,18 +543,6 @@ local function AddButton(page, text, callback)
     Btn.MouseButton1Click:Connect(callback)
 end
 
-local function AddLabel(page, text, alignment)
-    local InfoLabel = Instance.new("TextLabel")
-    InfoLabel.Size = UDim2.new(0, 385, 0, 24)
-    InfoLabel.BackgroundTransparency = 1
-    InfoLabel.Text = text
-    InfoLabel.TextColor3 = Theme.TextMuted
-    InfoLabel.TextSize = 12
-    InfoLabel.Font = Enum.Font.Gotham
-    InfoLabel.TextXAlignment = alignment or Enum.TextXAlignment.Center
-    InfoLabel.Parent = page
-end
-
 ----------------------------------------------------------------
 -- GAME MECHANICS ENGINES
 ----------------------------------------------------------------
@@ -690,7 +670,6 @@ end
 -- 4. Double Jump Engine
 local doubleJumpEnabled = false
 local hasDoubleJumped = false
-local oldPower = 0
 
 local function initDoubleJump()
     UserInputService.JumpRequest:Connect(function()
@@ -735,7 +714,6 @@ local function performDash()
     end)
 end
 
--- PC Event for Dash (Q Key)
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.Q then
@@ -743,7 +721,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- Create Mobile Dash Button Screen Layout
+-- Mobile Dash UI
 local MobileActionGui = Instance.new("ScreenGui")
 MobileActionGui.Name = "QuantumMobileActions"
 MobileActionGui.ResetOnSpawn = false
@@ -766,7 +744,7 @@ dashStroke.Thickness = 1.5
 
 DashMobileBtn.MouseButton1Click:Connect(performDash)
 
--- 6. Shift Lock Custom System (PC & Mobile)
+-- 6. Shift Lock Custom System
 local shiftLockEnabled = false
 local slConnection = nil
 
@@ -809,9 +787,9 @@ ShiftLockBtn.MouseButton1Click:Connect(function()
     toggleShiftLock(not shiftLockEnabled)
 end)
 
--- 7. Cursor Changer (PC Only)
+-- 7. Cursor Changer
 local cursorEnabled = false
-local customCursorUrl = "rbxassetid://13214539130" -- High Quality Crosshair Cursor
+local customCursorUrl = "rbxassetid://13214539130"
 local originalCursor = ""
 
 local function toggleCursor(state)
@@ -824,7 +802,7 @@ local function toggleCursor(state)
     end
 end
 
--- 8. Combat & World Hacks (Aimbot & Hitbox)
+-- 8. Combat (Aimbot & Hitbox)
 local aimbotActive = false
 local targetPlayerName = ""
 local hitboxActive = false
@@ -900,6 +878,242 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 ----------------------------------------------------------------
+-- [[ NEW UPDATE: PREMIUM SECURITY & ADVANCED SYSTEMS ]]
+----------------------------------------------------------------
+
+-- A. CLONE FLING GUARD ENGINE (Phân Thân Bảo Vệ + Fling Kẻ Địch)
+local cloneActive = false
+local currentClone = nil
+
+local function destroyClone()
+    if currentClone then
+        currentClone:Destroy()
+        currentClone = nil
+    end
+end
+
+local function spawnCloneGuard()
+    destroyClone()
+    if not Character or not RootPart then return end
+    
+    Character.Archivable = true
+    local clone = Character:Clone()
+    Character.Archivable = false
+    clone.Name = "QuantumProtector_Clone"
+    clone.Parent = workspace
+    currentClone = clone
+
+    -- Thiết lập ngoại hình Neon cho Clone
+    for _, part in ipairs(clone:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Color = Theme.Accent
+            part.Material = Enum.Material.Neon
+            part.CanCollide = false
+        elseif part:IsA("LocalScript") or part:IsA("Script") then
+            part:Destroy() -- Xóa Script gốc tránh gây lỗi
+        end
+    end
+
+    local cRoot = clone:FindFirstChild("HumanoidRootPart")
+    local cHum = clone:FindFirstChildOfClass("Humanoid")
+    if not cRoot or not cHum then return end
+
+    -- Gắn các chuyển động xoay siêu tốc để tạo lực đẩy FLING mạnh mẽ
+    local bodyAngular = Instance.new("BodyAngularVelocity")
+    bodyAngular.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+    bodyAngular.AngularVelocity = Vector3.new(0, 20000, 0) -- Xoay cực mạnh để Fling
+    bodyAngular.Parent = cRoot
+
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.Parent = cRoot
+
+    task.spawn(function()
+        while cloneActive and clone and clone.Parent do
+            if RootPart and Character then
+                local playerPos = RootPart.Position
+                local clonePos = cRoot.Position
+                local distanceToPlayer = (clonePos - playerPos).Magnitude
+
+                -- Tìm đối thủ gần nhất để húc bay (Fling)
+                local nearestEnemy = nil
+                local shortestDistance = 35 -- Khoảng cách bảo vệ (Studs)
+
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local enemyRoot = p.Character.HumanoidRootPart
+                        local dist = (enemyRoot.Position - playerPos).Magnitude
+                        if dist < shortestDistance then
+                            nearestEnemy = enemyRoot
+                            shortestDistance = dist
+                        end
+                    end
+                end
+
+                if nearestEnemy then
+                    -- Lao Clone thẳng vào đối thủ
+                    cHum:MoveTo(nearestEnemy.Position)
+                    bodyVelocity.Velocity = (nearestEnemy.Position - clonePos).Unit * 120
+                    
+                    -- Khi chạm trúng đối thủ, kích hoạt lực Fling cực mạnh
+                    cRoot.Touched:Connect(function(hit)
+                        local enemyChar = hit.Parent
+                        if enemyChar and enemyChar ~= Character and enemyChar ~= clone then
+                            local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
+                            if enemyRoot then
+                                -- Áp lực ném cực mạnh đẩy thẳng lên trời và ra xa
+                                enemyRoot.Velocity = Vector3.new(math.random(-5000, 5000), 50000, math.random(-5000, 5000))
+                            end
+                        end
+                    end)
+                else
+                    -- Đi tuần tra xung quanh bảo vệ người chơi
+                    if distanceToPlayer > 8 then
+                        cHum:MoveTo(playerPos + Vector3.new(math.random(-4, 4), 0, math.random(-4, 4)))
+                    end
+                    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                end
+            end
+            task.wait(0.1)
+        end
+        destroyClone()
+    end)
+end
+
+-- B. ANTI FLING (Chống bị hất văng)
+local antiFlingActive = false
+local antiFlingConnection = nil
+local function toggleAntiFling(state)
+    antiFlingActive = state
+    if antiFlingActive then
+        antiFlingConnection = RunService.Heartbeat:Connect(function()
+            if not Character then return end
+            for _, part in ipairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Velocity = Vector3.new(0, 0, 0)
+                    part.RotVelocity = Vector3.new(0, 0, 0)
+                end
+            end
+            -- Tắt va chạm vật lý tạm thời với tất cả người chơi khác
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    for _, subPart in ipairs(p.Character:GetDescendants()) do
+                        if subPart:IsA("BasePart") then
+                            subPart.CanCollide = false
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if antiFlingConnection then antiFlingConnection:Disconnect(); antiFlingConnection = nil end
+    end
+end
+
+-- C. ANTI AFK (Chống treo máy bị Kick)
+local antiAfkActive = false
+local antiAfkConnection = nil
+local function toggleAntiAfk(state)
+    antiAfkActive = state
+    if antiAfkActive then
+        local VirtualUser = game:GetService("VirtualUser")
+        antiAfkConnection = LocalPlayer.Idled:Connect(function()
+            if antiAfkActive then
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0, 0))
+            end
+        end)
+    else
+        if antiAfkConnection then antiAfkConnection:Disconnect(); antiAfkConnection = nil end
+    end
+end
+
+-- D. ANTI KICK & ANTI BAN BYPASS (Bảo vệ Client dùng Metatable Hooking)
+local antiKickActive = false
+local antiBanActive = false
+local hooked = false
+
+local function applySecureHooks()
+    if hooked then return end
+    hooked = true
+    
+    local success, err = pcall(function()
+        local rawMT = getrawmetatable(game)
+        if not rawMT then return end
+        setreadonly(rawMT, false)
+        
+        local oldNamecall = rawMT.__namecall
+        rawMT.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+            
+            -- Chống Kick từ Script Cục bộ
+            if self == LocalPlayer and string.lower(method) == "kick" and antiKickActive then
+                return nil -- Chặn đứng hành vi Kick
+            end
+            
+            -- Chống Ban (Bypass Remote Signals chuyên dụng)
+            if antiBanActive and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+                local remoteName = string.lower(self.Name)
+                if string.find(remoteName, "ban") or string.find(remoteName, "kick") or string.find(remoteName, "cheat") or string.find(remoteName, "detect") then
+                    return nil -- Chặn không gửi gói tin nghi vấn về Server
+                end
+            end
+            
+            return oldNamecall(self, ...)
+        end)
+        setreadonly(rawMT, true)
+    end)
+end
+
+-- E. ANTI LAG (Hỗ trợ máy yếu tăng FPS)
+local antiLagActive = false
+local originalMaterials = {}
+
+local function toggleAntiLag(state)
+    antiLagActive = state
+    if antiLagActive then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsDescendantOf(Character) then
+                originalMaterials[v] = {Material = v.Material, Color = v.Color}
+                v.Material = Enum.Material.SmoothPlastic
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            end
+        end
+    else
+        for part, data in pairs(originalMaterials) do
+            if part and part.Parent then
+                part.Material = data.Material
+            end
+        end
+        table.clear(originalMaterials)
+    end
+end
+
+-- F. ANTI BYPASS (Chặn quét Anti-Cheat cục bộ)
+local antiBypassActive = false
+local function toggleAntiBypass(state)
+    antiBypassActive = state
+    if antiBypassActive then
+        task.spawn(function()
+            while antiBypassActive do
+                for _, v in ipairs(game:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        local name = string.lower(v.Name)
+                        if string.find(name, "anticheat") or string.find(name, "ac") or string.find(name, "bypass") or string.find(name, "detection") then
+                            v.Disabled = true -- Vô hiệu hóa script quét
+                        end
+                    end
+                end
+                task.wait(1.5)
+            end
+        end)
+    end
+end
+
+----------------------------------------------------------------
 -- TAB CONTENTS STRUCTURING
 ----------------------------------------------------------------
 local MainTab = CreateTab("Modifiers", "Main")
@@ -928,12 +1142,16 @@ AddAdjuster(MainTab, "Walk Speed Val", 100, 16, 250, 15, function(v)
 end)
 
 -- [[ B. COMBAT TAB ]]
+AddToggle(CombatTab, "Clone Protect Guard (Fling)", false, function(st)
+    cloneActive = st
+    if cloneActive then spawnCloneGuard() else destroyClone() end
+end)
 AddTextBox(CombatTab, "Enter Target Name for Lock...", function(tx) targetPlayerName = tx end)
 AddToggle(CombatTab, "Aimbot Target Lock", false, function(st) aimbotActive = st end)
 AddToggle(CombatTab, "Expand World Hitboxes", false, function(st) if st then hitboxActive = true else resetHitboxes() end end)
 AddAdjuster(CombatTab, "Hitbox Dimension Radius", 2, 2, 30, 2, function(v) targetHitboxSize = v end)
 
--- [[ C. MOVEMENT TAB (NEW) ]]
+-- [[ C. MOVEMENT TAB ]]
 AddToggle(MovementTab, "Double Jump Trigger", false, function(st) doubleJumpEnabled = st end)
 AddToggle(MovementTab, "Dash Dash Mechanics", false, function(st) dashEnabled = st; DashMobileBtn.Visible = st end)
 AddAdjuster(MovementTab, "Dash Thrust Velocity", 120, 50, 300, 10, function(v) dashSpeed = v end)
@@ -959,9 +1177,16 @@ AddButton(BuildTab, "Purge Custom Placed Blocks", function()
     end 
 end)
 
--- [[ F. SETTINGS TAB ]]
+-- [[ F. SETTINGS TAB (ĐÃ THÊM CÁC TÍNH NĂNG CHỐNG HACK) ]]
 AddToggle(ConfigTab, "Enable Custom Gaming Cursor", false, function(st) toggleCursor(st) end)
 AddToggle(ConfigTab, "Enable Shift Lock Controller", false, function(st) ShiftLockBtn.Visible = st; if not st then toggleShiftLock(false) end end)
+AddToggle(ConfigTab, "Anti Fling Mode", false, function(st) toggleAntiFling(st) end)
+AddToggle(ConfigTab, "Anti AFK System", false, function(st) toggleAntiAfk(st) end)
+AddToggle(ConfigTab, "Anti Ban (Secure Hooks)", false, function(st) antiBanActive = st; if st then applySecureHooks() end end)
+AddToggle(ConfigTab, "Anti Kick Security", false, function(st) antiKickActive = st; if st then applySecureHooks() end end)
+AddToggle(ConfigTab, "Anti Lag (Optimized FPS)", false, function(st) toggleAntiLag(st) end)
+AddToggle(ConfigTab, "Anti Bypass (AC Freeze)", false, function(st) toggleAntiBypass(st) end)
+
 local rainbowAccent = false
 AddToggle(ConfigTab, "Sidebar Rainbow Glow", false, function(state)
     rainbowAccent = state
@@ -979,12 +1204,14 @@ AddToggle(ConfigTab, "Sidebar Rainbow Glow", false, function(state)
         FloatStroke.Color = Theme.Accent
     end)
 end)
+
 AddButton(ConfigTab, "Rejoin Safe Server Instance", function()
     local ok, _ = pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end)
     if not ok then TeleportService:Teleport(game.PlaceId, LocalPlayer) end
 end)
 AddButton(ConfigTab, "Purge Quantum Engine GUI", function() 
     stopFlying(); resetHitboxes(); toggleAirWalk(false); toggleShiftLock(false); toggleCursor(false)
+    toggleAntiFling(false); toggleAntiAfk(false); toggleAntiLag(false); toggleAntiBypass(false); destroyClone()
     MobileActionGui:Destroy(); ScreenGui:Destroy() 
 end)
 
@@ -997,10 +1224,11 @@ MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; Floa
 FloatingBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; FloatingBtn.Visible = false end)
 CloseBtn.MouseButton1Click:Connect(function() 
     stopFlying(); resetHitboxes(); toggleAirWalk(false); toggleShiftLock(false); toggleCursor(false)
+    toggleAntiFling(false); toggleAntiAfk(false); toggleAntiLag(false); toggleAntiBypass(false); destroyClone()
     MobileActionGui:Destroy(); ScreenGui:Destroy() 
 end)
 
--- Auto Focus on Modifiers (Main) Page
+-- Focus vào Modifiers đầu tiên
 local firstTab = TabScroll:FindFirstChild("ModifiersTab")
 if firstTab then
     firstTab.TextColor3 = Theme.Accent
