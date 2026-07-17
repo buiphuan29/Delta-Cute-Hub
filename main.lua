@@ -1,10 +1,10 @@
 --[[
-    🌸 DELTA PREMIUM CUTE HUB - ULTIMATE OMEGA V5 🌸
+    🌸 DELTA PREMIUM CUTE HUB - ULTIMATE OMEGA V5.1 🌸
     - Thiết kế: Sweet Pink Pastel (Siêu dễ thương, bo góc mềm mại)
-    - Hệ thống: Tích hợp đầy đủ tính năng cũ + Màn hình Loading Cute + Lazer Fling cực mạnh!
+    - SỬA LỖI: Hiển thị đầy đủ các nút tính năng khi chuyển đổi giữa các Tab!
 --]]
 
--- Reset kết nối cũ
+-- Reset kết nối cũ để tránh lag game
 if _G.DeltaHubConnections then
     for name, connection in pairs(_G.DeltaHubConnections) do
         if connection then pcall(function() connection:Disconnect() end) end
@@ -21,18 +21,13 @@ local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
-local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
-local executorUsed = identifyexecutor and identifyexecutor() or "Universal"
 
 -- Tạo folder chứa đồ xây dựng
 local buildFolder = Workspace:FindFirstChild("Delta_Premium_Builds")
 if not buildFolder then buildFolder = Instance.new("Folder", Workspace); buildFolder.Name = "Delta_Premium_Builds" end
-local outpostFolder = Workspace:FindFirstChild("Delta_Omega_Outpost")
-if outpostFolder then pcall(function() outpostFolder:Destroy() end) end
-outpostFolder = Instance.new("Folder", Workspace); outpostFolder.Name = "Delta_Omega_Outpost"
 
 ----------------------------------------------------
 -- ÂM THANH & HIỆU ỨNG HỒNG CUTE
@@ -116,8 +111,8 @@ end)
 
 -- Hiệu ứng chạy thanh Loading
 playCuteSound(6514115160)
-TweenService:Create(ProgressBar, TweenInfo.new(2, Enum.EasingStyle.OutQuad), {Size = UDim2.new(1, 0, 1, 0)}):Play()
-task.wait(2.2)
+TweenService:Create(ProgressBar, TweenInfo.new(1.5, Enum.EasingStyle.OutQuad), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+task.wait(1.7)
 TweenService:Create(LoadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
 for _, v in ipairs(LoadingFrame:GetChildren()) do
     if v:IsA("TextLabel") or v:IsA("Frame") then
@@ -173,7 +168,7 @@ local ContentContainer = Instance.new("ScrollingFrame", MainFrame)
 ContentContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 ContentContainer.Position = UDim2.new(0, 155, 0, 55)
 ContentContainer.Size = UDim2.new(1, -170, 1, -70)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 2.5, 0) -- Hỗ trợ cuộn xuống
+ContentContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0) -- Hỗ trợ cuộn tự động
 ContentContainer.ScrollBarThickness = 4
 ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(255, 182, 193)
 Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 12)
@@ -181,6 +176,11 @@ Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 12)
 local ContentLayout = Instance.new("UIListLayout", ContentContainer)
 ContentLayout.Padding = UDim.new(0, 8)
 ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Tự động điều chỉnh kích thước cuộn của ContentContainer
+ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ContentContainer.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 20)
+end)
 
 -- Nút đóng Hub
 local CloseBtn = Instance.new("TextButton", MainFrame)
@@ -195,7 +195,7 @@ Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
 CloseBtn.MouseButton1Click:Connect(function() CuteGui:Destroy() end)
 
 ----------------------------------------------------
--- BỘ DỰNG UI CUTE ENGINE
+-- BỘ DỰNG UI CUTE ENGINE (Đã sửa lỗi vẽ nút)
 ----------------------------------------------------
 local function clearContent()
     for _, child in ipairs(ContentContainer:GetChildren()) do
@@ -204,7 +204,7 @@ local function clearContent()
 end
 
 local function addParagraph(text)
-    local p = Instance.new("TextLabel", ContentContainer)
+    local p = Instance.new("TextLabel")
     p.Size = UDim2.new(0.92, 0, 0, 32)
     p.BackgroundTransparency = 1
     p.Font = Enum.Font.FredokaOne
@@ -212,10 +212,11 @@ local function addParagraph(text)
     p.TextColor3 = Color3.fromRGB(255, 105, 180)
     p.TextSize = 13
     p.TextXAlignment = Enum.TextXAlignment.Left
+    p.Parent = ContentContainer
 end
 
 local function addButton(name, callback)
-    local btn = Instance.new("TextButton", ContentContainer)
+    local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 38)
     btn.BackgroundColor3 = Color3.fromRGB(255, 192, 203)
     btn.Text = "⭐ " .. name
@@ -223,6 +224,7 @@ local function addButton(name, callback)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.TextSize = 14
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    btn.Parent = ContentContainer
     
     btn.MouseButton1Click:Connect(function()
         playCuteSound(1222212437)
@@ -232,7 +234,7 @@ end
 
 local function addToggle(name, default, callback)
     local active = default
-    local btn = Instance.new("TextButton", ContentContainer)
+    local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 38)
     btn.BackgroundColor3 = active and Color3.fromRGB(255, 105, 180) or Color3.fromRGB(245, 240, 242)
     btn.Text = (active and "💝 " or "🤍 ") .. name
@@ -240,6 +242,7 @@ local function addToggle(name, default, callback)
     btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
     btn.TextSize = 13
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    btn.Parent = ContentContainer
     
     btn.MouseButton1Click:Connect(function()
         active = not active
@@ -252,7 +255,7 @@ local function addToggle(name, default, callback)
 end
 
 local function addSlider(name, min, max, default, callback)
-    local valLabel = Instance.new("TextLabel", ContentContainer)
+    local valLabel = Instance.new("TextLabel")
     valLabel.Size = UDim2.new(0.92, 0, 0, 20)
     valLabel.BackgroundTransparency = 1
     valLabel.Font = Enum.Font.FredokaOne
@@ -260,12 +263,14 @@ local function addSlider(name, min, max, default, callback)
     valLabel.TextColor3 = Color3.fromRGB(120, 120, 120)
     valLabel.TextSize = 12
     valLabel.TextXAlignment = Enum.TextXAlignment.Left
+    valLabel.Parent = ContentContainer
 
-    local sliderBg = Instance.new("TextButton", ContentContainer)
+    local sliderBg = Instance.new("TextButton")
     sliderBg.Size = UDim2.new(0.92, 0, 0, 12)
     sliderBg.BackgroundColor3 = Color3.fromRGB(255, 218, 224)
     sliderBg.Text = ""
     Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
+    sliderBg.Parent = ContentContainer
 
     local sliderBar = Instance.new("Frame", sliderBg)
     sliderBar.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
@@ -300,7 +305,7 @@ local function addSlider(name, min, max, default, callback)
 end
 
 ----------------------------------------------------
--- LOGIC CÁC TÍNH NĂNG ĐƯỢC TỐI ƯU
+-- LOGIC TÍNH NĂNG ĐÃ ĐƯỢC TỐI ƯU HÓA
 ----------------------------------------------------
 
 -- 1. SIÊU NHÂN BẮN LAZER FLING (Đã tối ưu Fling cực mạnh)
@@ -350,8 +355,10 @@ local function toggleLaserHero(Value)
                     
                     -- Vẽ tia Laser Neon hồng
                     local beam = Instance.new("Part", Workspace)
-                    beam.Anchored = true; beam.CanCollide = false
-                    beam.Color = Color3.fromRGB(255, 20, 147); beam.Material = Enum.Material.Neon
+                    beam.CanCollide = false
+                    beam.Anchored = true
+                    beam.Color = Color3.fromRGB(255, 20, 147)
+                    beam.Material = Enum.Material.Neon
                     
                     local origin = hrp.Position + Vector3.new(0, 1.5, 0)
                     local target = rayResult.Position
@@ -684,7 +691,7 @@ local tabs = {
 }
 
 for _, tabData in ipairs(tabs) do
-    local tabBtn = Instance.new("TextButton", TabContainer)
+    local tabBtn = Instance.new("TextButton")
     tabBtn.Size = UDim2.new(0.9, 0, 0, 36)
     tabBtn.BackgroundColor3 = Color3.fromRGB(255, 205, 215)
     tabBtn.Text = tabData[1]
@@ -692,6 +699,7 @@ for _, tabData in ipairs(tabs) do
     tabBtn.TextColor3 = Color3.fromRGB(130, 80, 90)
     tabBtn.TextSize = 13
     Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 8)
+    tabBtn.Parent = TabContainer
     
     tabBtn.MouseButton1Click:Connect(function()
         playCuteSound(1222220043)
@@ -699,6 +707,5 @@ for _, tabData in ipairs(tabs) do
     end)
 end
 
--- Load trang đầu tiên
+-- Tự động mở Tab Chính đầu tiên sau khi load
 loadMainTab()
-
