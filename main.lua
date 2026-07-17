@@ -1,12 +1,13 @@
 --[[
-    🎮 DELTA DARK PREMIUM HUB - VERSION 9.0 (SUPERHERO & ULTIMATE VFX) 🎮
-    - Mới: Chế độ Siêu Nhân (Áo choàng năng lượng, Hào quang cơ thể).
-    - Mới: Mắt bắn Laser hủy diệt + Hoạt ảnh gồng lực + VFX nổ điểm chạm.
-    - Mới: Năng lực nhấc bổng & điều khiển người chơi bằng tia liên kết vật lý.
-    - Nâng cấp: Nâng tầm VFX cho Bay (Wind Ring), Air Walk (Hex Shield), Water Walk (Splash).
+    🎮 DELTA DARK ULTIMATE HUB - VERSION 10.0 (GOD EDITION) 🎮
+    - Tự động duy trì hiệu ứng Siêu Nhân sau khi hồi sinh (Respawn Proof).
+    - Mắt Laser liên tục (Hold to Shoot) + Hào quang rực lửa + Áo choàng động lực học.
+    - Nhấc người chơi bằng lực hút trọng trường mượt mà (Physics Lerped Grab).
+    - Tích hợp Widget thông tin cá nhân dành riêng cho An (7B) và Bộ đếm FPS/Ping thực tế.
+    - Bổ sung Noclip, Infinite Jump, Chams/Box ESP, và các tính năng cốt lõi.
 --]]
 
--- Reset kết nối cũ tránh trùng lặp
+-- Ngắt kết nối cũ để tránh xung đột hệ thống
 if _G.DeltaHubConnections then
     for name, connection in pairs(_G.DeltaHubConnections) do
         if connection then pcall(function() connection:Disconnect() end) end
@@ -14,183 +15,114 @@ if _G.DeltaHubConnections then
 end
 _G.DeltaHubConnections = {}
 
--- Load Services
+-- Load Core Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
-local TeleportService = game:GetService("TeleportService")
+local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Khởi tạo Shader
-local function getOrCreateShader(className, name)
-    local shader = Lighting:FindFirstChild(name)
-    if not shader then
-        shader = Instance.new(className)
-        shader.Name = name
-        shader.Parent = Lighting
-    end
-    return shader
-end
-
-local CustomBlur = getOrCreateShader("BlurEffect", "Delta_Blur")
-local CustomColorCorr = getOrCreateShader("ColorCorrectionEffect", "Delta_ColorCorr")
-CustomBlur.Size = 0
-CustomColorCorr.Contrast = 0
-CustomColorCorr.Saturation = 0
-CustomColorCorr.Brightness = 0
-
-local function cleanShaders()
-    if CustomBlur then pcall(function() CustomBlur:Destroy() end) end
-    if CustomColorCorr then pcall(function() CustomColorCorr:Destroy() end) end
-end
-
--- Tạo folder chứa VFX tránh rác Workspace
+-- Dọn dẹp VFX cũ
 local vfxFolder = Workspace:FindFirstChild("Delta_VFX_Storage")
-if not vfxFolder then 
-    vfxFolder = Instance.new("Folder", Workspace)
-    vfxFolder.Name = "Delta_VFX_Storage" 
-end
+if vfxFolder then pcall(function() vfxFolder:Destroy() end) end
+vfxFolder = Instance.new("Folder", Workspace)
+vfxFolder.Name = "Delta_VFX_Storage"
 
-----------------------------------------------------
--- 🌀 HIỆU ỨNG LOADING SCREEN (VFX & ANIMATION) 🌀
-----------------------------------------------------
-local LoadingGui = Instance.new("ScreenGui")
-local coreGuiSuccess, coreGuiParent = pcall(function() return game:GetService("CoreGui") end)
-LoadingGui.Parent = coreGuiSuccess and coreGuiParent or LocalPlayer:FindFirstChildOfClass("PlayerGui")
-LoadingGui.Name = "DeltaLoading_" .. tostring(math.random(1000, 9999))
-
-local LoadFrame = Instance.new("Frame", LoadingGui)
-LoadFrame.Size = UDim2.new(0, 300, 0, 150)
-LoadFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-LoadFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Instance.new("UICorner", LoadFrame).CornerRadius = UDim.new(0, 12)
-
-local LoadStroke = Instance.new("UIStroke", LoadFrame)
-LoadStroke.Thickness = 2
-LoadStroke.Color = Color3.fromRGB(230, 30, 30)
-
-local LoadTitle = Instance.new("TextLabel", LoadFrame)
-LoadTitle.Size = UDim2.new(1, 0, 0, 40)
-LoadTitle.Position = UDim2.new(0, 0, 0, 15)
-LoadTitle.BackgroundTransparency = 1
-LoadTitle.Text = "DELTA DARK ULTIMATE v9.0"
-LoadTitle.Font = Enum.Font.SourceSansBold
-LoadTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadTitle.TextSize = 20
-
-local LoadStatus = Instance.new("TextLabel", LoadFrame)
-LoadStatus.Size = UDim2.new(1, 0, 0, 20)
-LoadStatus.Position = UDim2.new(0, 0, 0, 55)
-LoadStatus.BackgroundTransparency = 1
-LoadStatus.Text = "Đang nạp hệ thống VFX..."
-LoadStatus.Font = Enum.Font.SourceSansItalic
-LoadStatus.TextColor3 = Color3.fromRGB(180, 180, 180)
-LoadStatus.TextSize = 13
-
-local ProgressBg = Instance.new("Frame", LoadFrame)
-ProgressBg.Size = UDim2.new(0.8, 0, 0, 6)
-ProgressBg.Position = UDim2.new(0.1, 0, 0, 95)
-ProgressBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", ProgressBg).CornerRadius = UDim.new(1, 0)
-
-local ProgressBar = Instance.new("Frame", ProgressBg)
-ProgressBar.Size = UDim2.new(0, 0, 1, 0)
-ProgressBar.BackgroundColor3 = Color3.fromRGB(230, 30, 30)
-Instance.new("UICorner", ProgressBar).CornerRadius = UDim.new(1, 0)
-
-local steps = {"Khởi tạo hạt quang phổ...", "Tải cấu trúc Áo Choàng Siêu Nhân...", "Cân chỉnh tọa độ Laser...", "Sẵn sàng chiến đấu!"}
-task.spawn(function()
-    for i, stepText in ipairs(steps) do
-        LoadStatus.Text = stepText
-        local targetScale = i / #steps
-        local tween = TweenService:Create(ProgressBar, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(targetScale, 0, 1, 0)})
-        tween:Play()
-        tween.Completed:Wait()
-        task.wait(0.1)
-    end
-    local fadeTween = TweenService:Create(LoadFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1})
-    TweenService:Create(LoadStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
-    TweenService:Create(LoadTitle, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-    TweenService:Create(LoadStatus, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-    TweenService:Create(ProgressBar, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(ProgressBg, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    fadeTween:Play()
-    fadeTween.Completed:Wait()
-    LoadingGui:Destroy()
-end)
-
-task.wait(1.5)
-
-----------------------------------------------------
--- ⚡ CHỨC NĂNG SIÊU ANH HÙNG (SUPERHERO SYSTEM) ⚡
-----------------------------------------------------
+-- Biến toàn cục kiểm soát tính năng
 local superheroActive = false
 local laserActive = false
 local grabActive = false
+local noclipActive = false
+local infJumpActive = false
 
 local grabbedPlayer = nil
 local grabConnection = nil
 local grabLaserBeam = nil
 local grabAttA, grabAttB = nil, nil
 
--- 1. TẠO ÁO CHOÀNG & HÀO QUANG SIÊU NHÂN
+----------------------------------------------------
+-- 📈 BỘ ĐẾM HIỆU NĂNG (FPS & PING ENGINE)
+----------------------------------------------------
+local fpsVal, pingVal = 60, 0
+local fpsTable = {}
+task.spawn(function()
+    while task.wait(1) do
+        pingVal = math.round(stats().Network.ServerToClientPing:GetValue() * 1000)
+    end
+end)
+_G.DeltaHubConnections["FPS_Tracker"] = RunService.RenderStepped:Connect(function(dt)
+    table.insert(fpsTable, dt)
+    while #fpsTable > 0 and fpsTable[1] < os.clock() - 1 do
+        table.remove(fpsTable, 1)
+    end
+    fpsVal = #fpsTable
+end)
+
+----------------------------------------------------
+-- ⚡ ĐỊNH NGHĨA VFX SIÊU ANH HÙNG (CỰC KỲ ỔN ĐỊNH)
+----------------------------------------------------
 local function applySuperheroVFX(char)
-    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+    if not char then return end
+    local torso = char:WaitForChild("Torso", 5) or char:WaitForChild("UpperTorso", 5)
     if not torso then return end
 
-    -- Tạo Áo Choàng Năng Lượng bằng Beams cực đẹp
+    -- Dọn dẹp VFX cũ bám trên nhân vật trước khi tạo mới
+    for _, obj in ipairs(char:GetDescendants()) do
+        if obj.Name == "HeroCape" or obj.Name == "CapeTop" or obj.Name == "CapeBottom" or obj.Name == "HeroAura" then
+            pcall(function() obj:Destroy() end)
+        end
+    end
+
+    -- Áo Choàng Năng Lượng (Chống rách, co giãn tự nhiên)
     local attTop = Instance.new("Attachment", torso)
     attTop.Name = "CapeTop"
     attTop.Position = Vector3.new(0, 0.8, 0.55)
 
     local attBottom = Instance.new("Attachment", torso)
     attBottom.Name = "CapeBottom"
-    attBottom.Position = Vector3.new(0, -2.2, 1.4)
+    attBottom.Position = Vector3.new(0, -2.4, 1.5)
 
     local cape = Instance.new("Beam", torso)
     cape.Name = "HeroCape"
     cape.Attachment0 = attTop
     cape.Attachment1 = attBottom
-    cape.Width0 = 1.4
-    cape.Width1 = 2.4
+    cape.Width0 = 1.3
+    cape.Width1 = 2.5
     cape.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 0, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 0, 10)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
     })
-    cape.Texture = "rbxassetid://1084991219" -- Texture lượn sóng phản quang
-    cape.TextureSpeed = 2
-    cape.LightEmission = 0.85
+    cape.Texture = "rbxassetid://1084991219"
+    cape.TextureSpeed = 2.5
+    cape.LightEmission = 0.8
     cape.LightInfluence = 0
 
-    -- Hiệu ứng Bụi Sao (Sparks) rơi từ áo choàng
+    -- Luồng bụi sao đỏ rực tỏa ra sau lưng
     local spark = Instance.new("ParticleEmitter", attTop)
     spark.Name = "HeroSparks"
     spark.Texture = "rbxassetid://244222064"
-    spark.Color = ColorSequence.new(Color3.fromRGB(255, 50, 50))
-    spark.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.25),
-        NumberSequenceKeypoint.new(1, 0)
-    })
-    spark.Lifetime = NumberRange.new(0.6, 1.2)
-    spark.Speed = NumberRange.new(2, 4)
-    spark.SpreadAngle = Vector2.new(25, 25)
-    spark.Acceleration = Vector3.new(0, -6, -2)
+    spark.Color = ColorSequence.new(Color3.fromRGB(255, 30, 30))
+    spark.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0)})
+    spark.Lifetime = NumberRange.new(0.8, 1.4)
+    spark.Speed = NumberRange.new(3, 6)
+    spark.SpreadAngle = Vector2.new(20, 20)
+    spark.Acceleration = Vector3.new(0, -5, -3)
 
-    -- Hào quang đỏ rực quanh cơ thể (Body Aura)
+    -- Hào quang đỏ bao bọc cơ thể
     local aura = Instance.new("ParticleEmitter", torso)
     aura.Name = "HeroAura"
     aura.Texture = "rbxassetid://607157592"
-    aura.Color = ColorSequence.new(Color3.fromRGB(255, 0, 50))
-    aura.Size = NumberSequence.new(2, 3.5)
-    aura.Lifetime = NumberRange.new(0.8, 1.4)
-    aura.Rate = 15
-    aura.Speed = NumberRange.new(0.5, 1.5)
+    aura.Color = ColorSequence.new(Color3.fromRGB(255, 10, 50))
+    aura.Size = NumberSequence.new(2, 4)
+    aura.Lifetime = NumberRange.new(0.6, 1.2)
+    aura.Rate = 18
+    aura.Speed = NumberRange.new(0.5, 2)
     aura.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 0.8),
         NumberSequenceKeypoint.new(0.5, 0.4),
@@ -202,91 +134,71 @@ local function removeSuperheroVFX(char)
     if not char then return end
     for _, obj in ipairs(char:GetDescendants()) do
         if obj.Name == "HeroCape" or obj.Name == "CapeTop" or obj.Name == "CapeBottom" or obj.Name == "HeroAura" then
-            obj:Destroy()
+            pcall(function() obj:Destroy() end)
         end
     end
 end
 
--- 2. BẮN LASER MẮT + HOẠT ẢNH + VFX BÙNG NỔ
-local function fireEyeLasers()
+-- Tự động kích hoạt lại khi nhân vật Respawn (Sửa lỗi phiên bản cũ)
+_G.DeltaHubConnections["CharacterWatcher"] = LocalPlayer.CharacterAdded:Connect(function(newChar)
+    if superheroActive then
+        task.wait(1.5) -- Đợi nhân vật tải xong hoàn toàn
+        applySuperheroVFX(newChar)
+    end
+end)
+
+----------------------------------------------------
+-- 🔥 MẮT LASER LIÊN TỤC & ĐIỀU KHIỂN TRỌNG LỰC
+----------------------------------------------------
+local shootingLaser = false
+
+local function shootLaserStream()
     local char = LocalPlayer.Character
     local head = char and char:FindFirstChild("Head")
-    if not head then return end
+    if not head or not shootingLaser then return end
 
     local mouse = LocalPlayer:GetMouse()
     local targetPos = mouse.Hit.p
 
-    -- Hoạt ảnh gồng mình (Procedural Head-tilt & Arms Raise)
-    local anim = Instance.new("Animation")
-    anim.AnimationId = getCharacterRigType() == "R15" and "rbxassetid://507770677" or "rbxassetid://125750702"
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    local loadAnim = hum and hum:FindFirstChildOfClass("Animator"):LoadAnimation(anim)
-    if loadAnim then
-        loadAnim:Play()
-        loadAnim.AdjustSpeed(loadAnim, 2)
-    end
+    -- Điểm bắn từ 2 mắt
+    local leftEye = head.CFrame * CFrame.new(-0.25, 0.15, -0.6)
+    local rightEye = head.CFrame * CFrame.new(0.25, 0.15, -0.6)
 
-    -- Tính toán điểm phát laser từ 2 mắt
-    local leftEyeOffset = head.CFrame * CFrame.new(-0.25, 0.15, -0.55)
-    local rightEyeOffset = head.CFrame * CFrame.new(0.25, 0.15, -0.55)
-
-    -- Hàm dựng đường tia laser phát sáng hình Cylinder
-    local function createLaserBeam(startCFrame)
-        local distance = (startCFrame.p - targetPos).Magnitude
+    local function drawSingleLaser(startPos)
+        local distance = (startPos.p - targetPos).Magnitude
         local laser = Instance.new("Part", vfxFolder)
         laser.Anchored = true
         laser.CanCollide = false
         laser.Material = Enum.Material.Neon
-        laser.Color = Color3.fromRGB(255, 0, 0)
-        laser.Size = Vector3.new(0.25, 0.25, distance)
-        laser.CFrame = CFrame.new(startCFrame.p, targetPos) * CFrame.new(0, 0, -distance/2)
-        
-        -- Hiệu ứng co rút biến mất mượt mà
-        TweenService:Create(laser, TweenInfo.new(0.25), {
-            Size = Vector3.new(0, 0, distance),
-            Color = Color3.fromRGB(255, 150, 0)
-        }):Play()
-        task.delay(0.25, function() laser:Destroy() end)
+        laser.Color = Color3.fromRGB(255, 0, 50)
+        laser.Size = Vector3.new(0.18, 0.18, distance)
+        laser.CFrame = CFrame.new(startPos.p, targetPos) * CFrame.new(0, 0, -distance/2)
+        Debris:AddItem(laser, 0.08)
     end
 
-    createLaserBeam(leftEyeOffset)
-    createLaserBeam(rightEyeOffset)
+    drawSingleLaser(leftEye)
+    drawSingleLaser(rightEye)
 
-    -- VFX Điểm Chạm (Impact Explosion)
+    -- Hiệu ứng bùng nổ bụi lửa đỏ tại điểm chạm
     local impact = Instance.new("Part", vfxFolder)
     impact.Shape = Enum.PartType.Ball
     impact.Material = Enum.Material.Neon
     impact.Color = Color3.fromRGB(255, 50, 0)
-    impact.Size = Vector3.new(1, 1, 1)
+    impact.Size = Vector3.new(2, 2, 2)
     impact.Position = targetPos
     impact.Anchored = true
     impact.CanCollide = false
+    Debris:AddItem(impact, 0.15)
 
-    local impactAura = Instance.new("ParticleEmitter", impact)
-    impactAura.Texture = "rbxassetid://244222064"
-    impactAura.Size = NumberSequence.new(1, 0)
-    impactAura.Speed = NumberRange.new(10, 25)
-    impactAura.Lifetime = NumberRange.new(0.3, 0.7)
-    impactAura.Rate = 120
-
-    TweenService:Create(impact, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = Vector3.new(6, 6, 6),
-        Transparency = 1
-    }):Play()
-
-    task.delay(0.3, function() impact:Destroy() end)
-
-    -- Sức mạnh hất văng vật phẩm hoặc người chơi gần điểm chạm
-    task.spawn(function()
-        local exp = Instance.new("Explosion")
-        exp.Position = targetPos
-        exp.BlastRadius = 10
-        exp.BlastPressure = 200000 -- Đẩy văng cực mạnh nhưng không làm chết nhân vật
-        exp.Parent = vfxFolder
-    end)
+    -- Lực đẩy đẩy văng các vật thể xung quanh điểm chạm
+    local exp = Instance.new("Explosion")
+    exp.Position = targetPos
+    exp.BlastRadius = 8
+    exp.BlastPressure = 150000
+    exp.Parent = vfxFolder
 end
 
--- 3. ĐIỀU KHIỂN & NHẤC NGƯỜI CHƠI (TELEKINESIS GRAB)
+-- Telekinesis Grab (Nhấc và Giữ đối thủ mượt mà)
 local function startGrabbing()
     local mouse = LocalPlayer:GetMouse()
     local target = mouse.Target
@@ -299,28 +211,27 @@ local function startGrabbing()
         local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         
         if targetHrp and myHrp then
-            -- Tạo tia sét năng lượng kết nối vật lý bằng Beam
+            -- Liên kết sấm sét đỏ
             grabAttA = Instance.new("Attachment", myHrp)
-            grabAttA.Name = "GrabAttA"
             grabAttA.Position = Vector3.new(0, 1.5, -1)
-
             grabAttB = Instance.new("Attachment", targetHrp)
-            grabAttB.Name = "GrabAttB"
 
             grabLaserBeam = Instance.new("Beam", vfxFolder)
             grabLaserBeam.Attachment0 = grabAttA
             grabLaserBeam.Attachment1 = grabAttB
-            grabLaserBeam.Width0 = 0.5
-            grabLaserBeam.Width1 = 0.5
+            grabLaserBeam.Width0 = 0.4
+            grabLaserBeam.Width1 = 0.4
             grabLaserBeam.Color = ColorSequence.new(Color3.fromRGB(255, 0, 50))
             grabLaserBeam.Texture = "rbxassetid://1084991219"
-            grabLaserBeam.TextureSpeed = 6
+            grabLaserBeam.TextureSpeed = 8
             grabLaserBeam.LightEmission = 1
 
-            -- Cập nhật liên tục kéo người chơi bay lơ lửng trước mặt
+            -- Cập nhật liên tục bằng vòng lặp mượt mà
             grabConnection = RunService.Heartbeat:Connect(function()
                 if grabbedPlayer and grabbedPlayer:Parent() and myHrp:Parent() then
-                    targetHrp.CFrame = myHrp.CFrame * CFrame.new(0, 3, -12)
+                    -- Lerp mượt mà giúp đối thủ không bị giật lag khi kéo đi
+                    local targetGoal = myHrp.CFrame * CFrame.new(0, 4, -15)
+                    targetHrp.CFrame = targetHrp.CFrame:Lerp(targetGoal, 0.25)
                     targetHrp.Velocity = Vector3.new(0, 0, 0)
                 else
                     stopGrabbing()
@@ -331,7 +242,7 @@ local function startGrabbing()
     end
 end
 
-local function stopGrabbing()
+function stopGrabbing()
     if grabConnection then grabConnection:Disconnect() grabConnection = nil end
     if grabLaserBeam then grabLaserBeam:Destroy() grabLaserBeam = nil end
     if grabAttA then grabAttA:Destroy() grabAttA = nil end
@@ -340,50 +251,37 @@ local function stopGrabbing()
 end
 
 ----------------------------------------------------
--- ⚙️ THIẾT KẾ GIAO DIỆN DARK PREMIUM v9.0
+-- 💎 THIẾT KẾ GUI DELTA DARK V10.0 (GOD LEVEL)
 ----------------------------------------------------
 local DarkGui = Instance.new("ScreenGui")
+local coreGuiSuccess, coreGuiParent = pcall(function() return game:GetService("CoreGui") end)
 DarkGui.Parent = coreGuiSuccess and coreGuiParent or LocalPlayer:FindFirstChildOfClass("PlayerGui")
-DarkGui.Name = "DeltaDarkHub_" .. tostring(math.random(1000, 9999))
+DarkGui.Name = "DeltaUltimate_" .. tostring(math.random(1000, 9999))
 DarkGui.ResetOnSpawn = false
 
-local BASE_WIDTH = 560
-local BASE_HEIGHT = 370
-local currentScale = 1.0
-
 local MainFrame = Instance.new("Frame", DarkGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-MainFrame.Position = UDim2.new(0.5, -BASE_WIDTH/2, 0.5, -BASE_HEIGHT/2)
-MainFrame.Size = UDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Position = UDim2.new(0.5, -290, 0.5, -195)
+MainFrame.Size = UDim2.new(0, 580, 0, 390)
 MainFrame.Active = true
-
-local HubScale = Instance.new("UIScale", MainFrame)
-HubScale.Scale = 1.0
-
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
+
 local HubStroke = Instance.new("UIStroke", MainFrame)
 HubStroke.Thickness = 2
-HubStroke.Color = Color3.fromRGB(230, 30, 30) -- Đỏ rực rỡ phong cách Siêu Nhân
+HubStroke.Color = Color3.fromRGB(230, 30, 30)
 
+-- Header Bar
 local HeaderBar = Instance.new("Frame", MainFrame)
-HeaderBar.Size = UDim2.new(1, 0, 0, 42)
-HeaderBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-HeaderBar.BackgroundTransparency = 0.95
+HeaderBar.Size = UDim2.new(1, 0, 0, 45)
+HeaderBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+HeaderBar.BackgroundTransparency = 0.5
 Instance.new("UICorner", HeaderBar).CornerRadius = UDim.new(0, 16)
 
-local HeaderGradient = Instance.new("UIGradient", HeaderBar)
-HeaderGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 10, 10)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 12))
-})
-
--- Kéo thả UI
+-- Hệ thống Kéo thả UI mượt mà
 local dragToggle, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragToggle = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
+        dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
         end)
@@ -392,134 +290,187 @@ end)
 MainFrame.InputChanged:Connect(function(input)
     if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
 local Title = Instance.new("TextLabel", MainFrame)
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 18, 0, 10)
-Title.Size = UDim2.new(1, -120, 0, 22)
+Title.Position = UDim2.new(0, 20, 0, 11)
+Title.Size = UDim2.new(0, 350, 0, 22)
 Title.Font = Enum.Font.SourceSansBold
-Title.Text = "DELTA DARK ULTIMATE v9.0 (SUPERHERO)"
+Title.Text = "DELTA DARK ULTIMATE v10.0 [GOD EDITION]"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 17
+Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Nút thu nhỏ
-local MiniButton = Instance.new("TextButton", DarkGui)
-MiniButton.Size = UDim2.new(0, 50, 0, 50)
-MiniButton.Position = UDim2.new(0.05, 0, 0.15, 0)
-MiniButton.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-MiniButton.Text = "⚡"
-MiniButton.Font = Enum.Font.SourceSansBold
-MiniButton.TextColor3 = Color3.fromRGB(230, 30, 30)
-MiniButton.TextSize = 25
-MiniButton.Visible = false
-Instance.new("UICorner", MiniButton).CornerRadius = UDim.new(1, 0)
+-- 📈 CHỈ SỐ LÀM VIỆC (REAL-TIME HUD)
+local PerfHud = Instance.new("TextLabel", MainFrame)
+PerfHud.Size = UDim2.new(0, 150, 0, 20)
+PerfHud.Position = UDim2.new(1, -230, 0, 12)
+PerfHud.BackgroundTransparency = 1
+PerfHud.Font = Enum.Font.Code
+PerfHud.TextColor3 = Color3.fromRGB(0, 255, 150)
+PerfHud.TextSize = 12
+PerfHud.TextXAlignment = Enum.TextXAlignment.Right
 
-local MiniStroke = Instance.new("UIStroke", MiniButton)
-MiniStroke.Thickness = 2
-MiniStroke.Color = Color3.fromRGB(230, 30, 30)
-
-local miniDrag, miniStart, miniFramePos
-MiniButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        miniDrag = true
-        miniStart = input.Position
-        miniFramePos = MiniButton.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then miniDrag = false end
-        end)
-    end
-end)
-MiniButton.InputChanged:Connect(function(input)
-    if miniDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - miniStart
-        MiniButton.Position = UDim2.new(
-            miniFramePos.X.Scale, miniFramePos.X.Offset + delta.X,
-            miniFramePos.Y.Scale, miniFramePos.Y.Offset + delta.Y
-        )
+task.spawn(function()
+    while task.wait(0.5) do
+        if PerfHud and PerfHud.Parent then
+            PerfHud.Text = string.format("FPS: %d | PING: %dms", fpsVal, pingVal)
+        end
     end
 end)
 
-local TopBarBtnContainer = Instance.new("Frame", MainFrame)
-TopBarBtnContainer.Size = UDim2.new(0, 60, 0, 25)
-TopBarBtnContainer.Position = UDim2.new(1, -75, 0, 10)
-TopBarBtnContainer.BackgroundTransparency = 1
+-- Nút Thu Nhỏ / Đóng
+local TopBtnContainer = Instance.new("Frame", MainFrame)
+TopBtnContainer.Size = UDim2.new(0, 60, 0, 25)
+TopBtnContainer.Position = UDim2.new(1, -75, 0, 10)
+TopBtnContainer.BackgroundTransparency = 1
 
-local LayoutTopBar = Instance.new("UIListLayout", TopBarBtnContainer)
-LayoutTopBar.FillDirection = Enum.FillDirection.Horizontal
-LayoutTopBar.HorizontalAlignment = Enum.HorizontalAlignment.Right
-LayoutTopBar.Padding = UDim.new(0, 8)
+local LayoutTop = Instance.new("UIListLayout", TopBtnContainer)
+LayoutTop.FillDirection = Enum.FillDirection.Horizontal
+LayoutTop.HorizontalAlignment = Enum.HorizontalAlignment.Right
+LayoutTop.Padding = UDim.new(0, 8)
 
-local CloseBtn = Instance.new("TextButton", TopBarBtnContainer)
+local CloseBtn = Instance.new("TextButton", TopBtnContainer)
 CloseBtn.Size = UDim2.new(0, 22, 0, 22)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(210, 50, 50)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
 CloseBtn.Text = "X"
 CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.TextSize = 11
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
 
-local ShrinkBtn = Instance.new("TextButton", TopBarBtnContainer)
+local ShrinkBtn = Instance.new("TextButton", TopBtnContainer)
 ShrinkBtn.Size = UDim2.new(0, 22, 0, 22)
-ShrinkBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+ShrinkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 ShrinkBtn.Text = "-"
 ShrinkBtn.Font = Enum.Font.SourceSansBold
 ShrinkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ShrinkBtn.TextSize = 14
+ShrinkBtn.TextSize = 13
 Instance.new("UICorner", ShrinkBtn).CornerRadius = UDim.new(1, 0)
+
+-- Nút Tròn Thu Nhỏ Nổi
+local FloatingBtn = Instance.new("TextButton", DarkGui)
+FloatingBtn.Size = UDim2.new(0, 55, 0, 55)
+FloatingBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
+FloatingBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FloatingBtn.Text = "🔱"
+FloatingBtn.Font = Enum.Font.SourceSansBold
+FloatingBtn.TextColor3 = Color3.fromRGB(230, 30, 30)
+FloatingBtn.TextSize = 26
+FloatingBtn.Visible = false
+Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
+local FloatStroke = Instance.new("UIStroke", FloatingBtn)
+FloatStroke.Thickness = 2
+FloatStroke.Color = Color3.fromRGB(230, 30, 30)
+
+local floatDrag, floatStart, floatFramePos
+FloatingBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        floatDrag = true; floatStart = input.Position; floatFramePos = FloatingBtn.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then floatDrag = false end end)
+    end
+end)
+FloatingBtn.InputChanged:Connect(function(input)
+    if floatDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - floatStart
+        FloatingBtn.Position = UDim2.new(floatFramePos.X.Scale, floatFramePos.X.Offset + delta.X, floatFramePos.Y.Scale, floatFramePos.Y.Offset + delta.Y)
+    end
+end)
 
 ShrinkBtn.MouseButton1Click:Connect(function()
     MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true, function()
         MainFrame.Visible = false
-        MiniButton.Visible = true
+        FloatingBtn.Visible = true
     end)
 end)
 
-MiniButton.MouseButton1Click:Connect(function()
-    MiniButton.Visible = false
+FloatingBtn.MouseButton1Click:Connect(function()
+    FloatingBtn.Visible = false
     MainFrame.Visible = true
-    MainFrame:TweenSize(UDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(UDim2.new(0, 580, 0, 390), "Out", "Quad", 0.3, true)
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    cleanShaders()
     stopGrabbing()
-    if LocalPlayer.Character then removeSuperheroVFX(LocalPlayer.Character) end
+    removeSuperheroVFX(LocalPlayer.Character)
     pcall(function() vfxFolder:Destroy() end)
+    pcall(function() if _G.DeltaHubConnections then for _, c in pairs(_G.DeltaHubConnections) do c:Disconnect() end end end)
     DarkGui:Destroy()
 end)
 
--- Sidebar
-local TabContainer = Instance.new("ScrollingFrame", MainFrame)
-TabContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-TabContainer.Position = UDim2.new(0, 12, 0, 52)
-TabContainer.Size = UDim2.new(0, 125, 1, -66)
-TabContainer.CanvasSize = UDim2.new(0, 0, 1.4, 0)
+----------------------------------------------------
+-- 👤 WIDGET THÔNG TIN TÀI KHOẢN ĐỘC QUYỀN (AN - 7B)
+----------------------------------------------------
+local SidebarContainer = Instance.new("Frame", MainFrame)
+SidebarContainer.Size = UDim2.new(0, 140, 1, -65)
+SidebarContainer.Position = UDim2.new(0, 12, 0, 53)
+SidebarContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Instance.new("UICorner", SidebarContainer).CornerRadius = UDim.new(0, 12)
+
+local ProfileCard = Instance.new("Frame", SidebarContainer)
+ProfileCard.Size = UDim2.new(1, 0, 0, 110)
+ProfileCard.BackgroundTransparency = 1
+
+local AvatarImg = Instance.new("ImageLabel", ProfileCard)
+AvatarImg.Size = UDim2.new(0, 50, 0, 50)
+AvatarImg.Position = UDim2.new(0.5, -25, 0, 10)
+AvatarImg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", AvatarImg).CornerRadius = UDim.new(1, 0)
+
+-- Lấy ảnh Avatar thật của người chơi
+pcall(function()
+    local userId = LocalPlayer.UserId
+    local thumbType = Enum.ThumbnailType.HeadShot
+    local thumbSize = Enum.ThumbnailSize.Size100x100
+    local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+    if isReady then AvatarImg.Image = content end
+end)
+
+local UserWelcome = Instance.new("TextLabel", ProfileCard)
+UserWelcome.Size = UDim2.new(1, 0, 0, 20)
+UserWelcome.Position = UDim2.new(0, 0, 0, 65)
+UserWelcome.BackgroundTransparency = 1
+UserWelcome.Font = Enum.Font.SourceSansBold
+UserWelcome.Text = "Chào An!"
+UserWelcome.TextColor3 = Color3.fromRGB(255, 215, 0)
+UserWelcome.TextSize = 13
+
+local ClassTag = Instance.new("TextLabel", ProfileCard)
+ClassTag.Size = UDim2.new(1, 0, 0, 15)
+ClassTag.Position = UDim2.new(0, 0, 0, 82)
+ClassTag.BackgroundTransparency = 1
+ClassTag.Font = Enum.Font.SourceSansItalic
+ClassTag.Text = "Lớp 7B - Quang Hà 2"
+ClassTag.TextColor3 = Color3.fromRGB(180, 180, 180)
+ClassTag.TextSize = 11
+
+-- Các Tabs di chuyển xuống dưới Profile Card
+local TabContainer = Instance.new("ScrollingFrame", SidebarContainer)
+TabContainer.Size = UDim2.new(1, 0, 1, -115)
+TabContainer.Position = UDim2.new(0, 0, 0, 115)
+TabContainer.BackgroundTransparency = 1
+TabContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0)
 TabContainer.ScrollBarThickness = 0
-Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 12)
 
 local TabList = Instance.new("UIListLayout", TabContainer)
-TabList.Padding = UDim.new(0, 7)
+TabList.Padding = UDim.new(0, 6)
 TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Nội dung bên phải
+-- Content Box bên phải
 local ContentContainer = Instance.new("ScrollingFrame", MainFrame)
-ContentContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ContentContainer.Position = UDim2.new(0, 148, 0, 52)
-ContentContainer.Size = UDim2.new(1, -160, 1, -66)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+ContentContainer.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+ContentContainer.Position = UDim2.new(0, 162, 0, 53)
+ContentContainer.Size = UDim2.new(1, -174, 1, -65)
+ContentContainer.CanvasSize = UDim2.new(0, 0, 1.6, 0)
 ContentContainer.ScrollBarThickness = 3
-ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(55, 55, 55)
+ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
 Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 12)
 
 local ContentLayout = Instance.new("UIListLayout", ContentContainer)
-ContentLayout.Padding = UDim.new(0, 14)
+ContentLayout.Padding = UDim.new(0, 12)
 ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -536,90 +487,63 @@ local function clearContent()
 end
 
 local function addParagraph(text)
-    local frame = Instance.new("Frame")
+    local frame = Instance.new("Frame", ContentContainer)
     frame.Size = UDim2.new(0.94, 0, 0, 24)
     frame.BackgroundTransparency = 1
-    frame.Parent = ContentContainer
-
     local p = Instance.new("TextLabel", frame)
     p.Size = UDim2.new(1, 0, 1, 0)
     p.BackgroundTransparency = 1
     p.Font = Enum.Font.SourceSansBold
-    p.Text = "★  " .. text:upper()
+    p.Text = "⚡  " .. text:upper()
     p.TextColor3 = HubStroke.Color
     p.TextSize = 13
     p.TextXAlignment = Enum.TextXAlignment.Left
-    
-    HubStroke:GetPropertyChangedSignal("Color"):Connect(function()
-        p.TextColor3 = HubStroke.Color
-    end)
 end
 
 local function addButton(name, callback)
-    local btn = Instance.new("TextButton")
+    local btn = Instance.new("TextButton", ContentContainer)
     btn.Size = UDim2.new(0.94, 0, 0, 36)
-    btn.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     btn.Text = name
     btn.Font = Enum.Font.SourceSansSemibold
     btn.TextColor3 = Color3.fromRGB(240, 240, 240)
     btn.TextSize = 13
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    btn.Parent = ContentContainer
-    
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Thickness = 1
-    stroke.Color = Color3.fromRGB(50, 50, 50)
+    stroke.Thickness = 1; stroke.Color = Color3.fromRGB(45, 45, 45)
     
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(44, 44, 44)}):Play()
-    end)
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}):Play()
-    end)
-    
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40) end)
+    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30) end)
     btn.MouseButton1Click:Connect(function() pcall(callback) end)
 end
 
 local function addToggle(name, default, callback)
     local active = default
-    local btn = Instance.new("TextButton")
+    local btn = Instance.new("TextButton", ContentContainer)
     btn.Size = UDim2.new(0.94, 0, 0, 36)
-    btn.BackgroundColor3 = active and HubStroke.Color or Color3.fromRGB(32, 32, 32)
+    btn.BackgroundColor3 = active and HubStroke.Color or Color3.fromRGB(30, 30, 30)
     btn.Text = name .. (active and " [BẬT]" or " [TẮT]")
     btn.Font = Enum.Font.SourceSansBold
     btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
     btn.TextSize = 13
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    btn.Parent = ContentContainer
-    
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Thickness = 1
-    stroke.Color = active and HubStroke.Color or Color3.fromRGB(50, 50, 50)
+    stroke.Thickness = 1; stroke.Color = active and HubStroke.Color or Color3.fromRGB(45, 45, 45)
 
-    HubStroke:GetPropertyChangedSignal("Color"):Connect(function()
-        if active then
-            btn.BackgroundColor3 = HubStroke.Color
-            stroke.Color = HubStroke.Color
-        end
-    end)
-    
     btn.MouseButton1Click:Connect(function()
         active = not active
-        local targetColor = active and HubStroke.Color or Color3.fromRGB(32, 32, 32)
-        local targetTextCol = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
-        
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = targetColor, TextColor3 = targetTextCol}):Play()
-        stroke.Color = active and HubStroke.Color or Color3.fromRGB(50, 50, 50)
+        btn.BackgroundColor3 = active and HubStroke.Color or Color3.fromRGB(30, 30, 30)
+        btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
+        stroke.Color = active and HubStroke.Color or Color3.fromRGB(45, 45, 45)
         btn.Text = name .. (active and " [BẬT]" or " [TẮT]")
         pcall(callback, active)
     end)
 end
 
 local function addSlider(name, min, max, default, callback)
-    local container = Instance.new("Frame")
+    local container = Instance.new("Frame", ContentContainer)
     container.Size = UDim2.new(0.94, 0, 0, 48)
     container.BackgroundTransparency = 1
-    container.Parent = ContentContainer
 
     local valLabel = Instance.new("TextLabel", container)
     valLabel.Size = UDim2.new(1, 0, 0, 18)
@@ -642,19 +566,11 @@ local function addSlider(name, min, max, default, callback)
     sliderBar.BackgroundColor3 = HubStroke.Color
     Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(1, 0)
 
-    HubStroke:GetPropertyChangedSignal("Color"):Connect(function()
-        sliderBar.BackgroundColor3 = HubStroke.Color
-    end)
-
     local dragging = false
     local function updateSlider(input)
         local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
         local val = min + (max - min) * pos
-        if max - min <= 5 then
-            val = math.round(val * 100) / 100
-        else
-            val = math.round(val)
-        end
+        val = math.round(val)
         sliderBar.Size = UDim2.new(pos, 0, 1, 0)
         valLabel.Text = name .. ": " .. tostring(val)
         pcall(callback, val)
@@ -662,8 +578,7 @@ local function addSlider(name, min, max, default, callback)
 
     sliderBg.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            updateSlider(input)
+            dragging = true; updateSlider(input)
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
@@ -679,14 +594,14 @@ local function addSlider(name, min, max, default, callback)
 end
 
 ----------------------------------------------------
--- CÁC PHÂN VÙNG HOẠT ĐỘNG HOÀN TOÀN MỚI
+-- CÁC TAB CHỨC NĂNG CHÍNH ĐÃ ĐƯỢC TỐI ƯU HÓA
 ----------------------------------------------------
 
--- 1. TAB SIÊU NHÂN (SUPERHERO TAB)
+-- 1. TAB SIÊU NHÂN (CựC KỲ HOÀN THIỆN)
 local function loadSuperheroTab()
     clearContent()
-    addParagraph("BIẾN HÌNH SIÊU ANH HÙNG")
-    addToggle("Chế Độ Siêu Nhân", false, function(v)
+    addParagraph("CHẾ ĐỘ SIÊU ANH HÙNG (RESPAWN PROOF)")
+    addToggle("Kích Hoạt Siêu Nhân (Áo choàng + Aura)", superheroActive, function(v)
         superheroActive = v
         local char = LocalPlayer.Character
         if v then
@@ -697,22 +612,34 @@ local function loadSuperheroTab()
     end)
 
     addParagraph("SIÊU NĂNG LỰC TẤN CÔNG")
-    addToggle("Kích Hoạt Mắt Laser", false, function(v)
+    addToggle("Mắt Bắn Laser (Nhấn giữ chuột trái)", laserActive, function(v)
         laserActive = v
         if v then
-            _G.DeltaHubConnections["LaserClick"] = UserInputService.InputBegan:Connect(function(input, gpe)
-                if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 and laserActive then
-                    fireEyeLasers()
+            -- Bắt sự kiện Nhấn và Giữ chuột trái để phun laser liên tục không giới hạn
+            _G.DeltaHubConnections["LaserMouseDown"] = UserInputService.InputBegan:Connect(function(input, gpe)
+                if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    shootingLaser = true
+                    task.spawn(function()
+                        while shootingLaser and laserActive do
+                            shootLaserStream()
+                            task.wait(0.05) -- Tốc độ nháy tia hạt cực cao
+                        end
+                    end)
+                end
+            end)
+            _G.DeltaHubConnections["LaserMouseUp"] = UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    shootingLaser = false
                 end
             end)
         else
-            if _G.DeltaHubConnections["LaserClick"] then 
-                _G.DeltaHubConnections["LaserClick"]:Disconnect() 
-            end
+            shootingLaser = false
+            if _G.DeltaHubConnections["LaserMouseDown"] then _G.DeltaHubConnections["LaserMouseDown"]:Disconnect() end
+            if _G.DeltaHubConnections["LaserMouseUp"] then _G.DeltaHubConnections["LaserMouseUp"]:Disconnect() end
         end
     end)
 
-    addToggle("Bắt Giữ Người Chơi (Click)", false, function(v)
+    addToggle("Nhấc Người Chơi (Click chọn mục tiêu)", grabActive, function(v)
         grabActive = v
         if v then
             _G.DeltaHubConnections["GrabClick"] = UserInputService.InputBegan:Connect(function(input, gpe)
@@ -726,18 +653,17 @@ local function loadSuperheroTab()
             end)
         else
             stopGrabbing()
-            if _G.DeltaHubConnections["GrabClick"] then 
-                _G.DeltaHubConnections["GrabClick"]:Disconnect() 
-            end
+            if _G.DeltaHubConnections["GrabClick"] then _G.DeltaHubConnections["GrabClick"]:Disconnect() end
         end
     end)
-    addButton("Thả nạn nhân rơi tự do", stopGrabbing)
+    addButton("Thả người chơi đang nhấc bổng", stopGrabbing)
 end
 
--- 2. TỐI ƯU HÓA DI CHUYỂN + HÌNH ẢNH (UPGRADED VFX)
+-- 2. TAB DI CHUYỂN CAO CẤP (Bao gồm Noclip & Inf Jump)
 local flyActive = false
 local flySpeed = 50
 local flyConn = nil
+
 local function toggleFly(Value)
     flyActive = Value
     local char = LocalPlayer.Character
@@ -752,22 +678,16 @@ local function toggleFly(Value)
         bg.Name = "DarkFlyBG"; bg.MaxTorque = Vector3.new(1e9, 1e9, 1e9); bg.CFrame = hrp.CFrame
         hum.PlatformStand = true
         
-        -- VFX: Đuôi luồng gió khí động học khi bay nhanh
+        -- Hiệu ứng vòng tròn gió khí động học khi bay
         local flyTrail = Instance.new("ParticleEmitter", hrp)
         flyTrail.Name = "FlyWindVFX"
-        flyTrail.Texture = "rbxassetid://312301912" -- Ring mờ dần
+        flyTrail.Texture = "rbxassetid://312301912"
         flyTrail.Color = ColorSequence.new(Color3.fromRGB(240, 240, 255))
-        flyTrail.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1.5),
-            NumberSequenceKeypoint.new(1, 4)
-        })
+        flyTrail.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1.5), NumberSequenceKeypoint.new(1, 4)})
         flyTrail.Lifetime = NumberRange.new(0.4, 0.7)
         flyTrail.Speed = NumberRange.new(2, 5)
-        flyTrail.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.5),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        flyTrail.Rate = 22
+        flyTrail.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1)})
+        flyTrail.Rate = 25
 
         flyConn = RunService.RenderStepped:Connect(function()
             local currentHrp = char:FindFirstChild("HumanoidRootPart")
@@ -799,137 +719,92 @@ local function toggleFly(Value)
     end
 end
 
-local airWalkActive, airWalkConn, airPlatform
-local function toggleAirWalk(Value)
-    airWalkActive = Value
-    if airWalkActive then
-        -- THAY THẾ BẰNG KHIÊN NĂNG LƯỢNG XOAY TRÒN (UPGRADED HEXAGON SHIELD)
-        airPlatform = Instance.new("Part", vfxFolder)
-        airPlatform.Size = Vector3.new(12, 0.6, 12)
-        airPlatform.Transparency = 0.5
-        airPlatform.Color = HubStroke.Color
-        airPlatform.Material = Enum.Material.ForceField
-        airPlatform.Anchored = true
-        
-        local rotation = 0
-        airWalkConn = RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp and airPlatform then
-                rotation = rotation + 2
-                airPlatform.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 3.4, hrp.Position.Z) * CFrame.Angles(0, math.rad(rotation), 0)
+-- NOCLIP (Đi xuyên tường cực mượt)
+task.spawn(function()
+    _G.DeltaHubConnections["NoclipLoop"] = RunService.Stepped:Connect(function()
+        if noclipActive and LocalPlayer.Character then
+            for _, child in ipairs(LocalPlayer.Character:GetDescendants()) do
+                if child:IsA("BasePart") then child.CanCollide = false end
             end
-        end)
-        _G.DeltaHubConnections["AirWalk"] = airWalkConn
-    else
-        if airWalkConn then airWalkConn:Disconnect() airWalkConn = nil end
-        if airPlatform then airPlatform:Destroy() airPlatform = nil end
-    end
-end
+        end
+    end)
+end)
 
-local waterWalkActive, waterWalkConn, waterPlatform
-local function toggleWaterWalk(Value)
-    waterWalkActive = Value
-    if waterWalkActive then
-        waterPlatform = Instance.new("Part", vfxFolder)
-        waterPlatform.Size = Vector3.new(14, 0.5, 14)
-        waterPlatform.Transparency = 0.8
-        waterPlatform.Color = Color3.fromRGB(0, 255, 255)
-        waterPlatform.Material = Enum.Material.Neon
-        waterPlatform.Anchored = true
-        
-        -- Tạo hạt bọt nước bắn tung tóe tại chân
-        local waterSplash = Instance.new("ParticleEmitter", waterPlatform)
-        waterSplash.Texture = "rbxassetid://244222064"
-        waterSplash.Color = ColorSequence.new(Color3.fromRGB(200, 255, 255))
-        waterSplash.Size = NumberSequence.new(0.5, 1.5)
-        waterSplash.Speed = NumberRange.new(5, 12)
-        waterSplash.Lifetime = NumberRange.new(0.4, 0.8)
-        waterSplash.Rate = 50
-        waterSplash.SpreadAngle = Vector2.new(45, 45)
-        waterSplash.VelocityInheritance = 0.5
-        
-        waterWalkConn = RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp and waterPlatform then
-                local rayParams = RaycastParams.new()
-                rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                rayParams.FilterDescendantsInstances = {char, vfxFolder}
-                local ray = Workspace:Raycast(hrp.Position, Vector3.new(0, -12, 0), rayParams)
-                if ray and ray.Material == Enum.Material.Water then
-                    waterPlatform.CFrame = CFrame.new(hrp.Position.X, ray.Position.Y + 0.35, hrp.Position.Z)
-                else
-                    waterPlatform.CFrame = CFrame.new(hrp.Position.X, -9999, hrp.Position.Z)
-                end
-            end
-        end)
-        _G.DeltaHubConnections["WaterWalk"] = waterWalkConn
-    else
-        if waterWalkConn then waterWalkConn:Disconnect() waterWalkConn = nil end
-        if waterPlatform then waterPlatform:Destroy() waterPlatform = nil end
+-- INFINITE JUMP (Nhảy vô hạn trên không)
+_G.DeltaHubConnections["InfJump"] = UserInputService.JumpRequest:Connect(function()
+    if infJumpActive and LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
-end
+end)
 
--- 3. CÁC PHƯƠNG THỨC COMPONENT KHÁC GỐC
-function getCharacterRigType()
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        return hum.RigType == Enum.HumanoidRigType.R15 and "R15" or "R6"
-    end
-    return "R15"
-end
-
-local function simulateRigMovement(targetRig)
-    local char = LocalPlayer.Character
-    local animate = char and char:FindFirst("Animate")
-    if not animate then return end
-    
-    if targetRig == "R6" then
-        pcall(function()
-            animate.run.RunAnim.AnimationId = "rbxassetid://180426354"
-            animate.walk.WalkAnim.AnimationId = "rbxassetid://180426354"
-            animate.jump.JumpAnim.AnimationId = "rbxassetid://125750702"
-            animate.fall.FallAnim.AnimationId = "rbxassetid://180436148"
-            animate.idle.Animation1.AnimationId = "rbxassetid://180435571"
-            animate.idle.Animation2.AnimationId = "rbxassetid://180435792"
-        end)
-    else
-        pcall(function()
-            animate.run.RunAnim.AnimationId = "rbxassetid://616163673"
-            animate.walk.WalkAnim.AnimationId = "rbxassetid://616168032"
-            animate.jump.JumpAnim.AnimationId = "rbxassetid://616157476"
-            animate.fall.FallAnim.AnimationId = "rbxassetid://616157476"
-            animate.idle.Animation1.AnimationId = "rbxassetid://507766666"
-            animate.idle.Animation2.AnimationId = "rbxassetid://507766951"
-        end)
-    end
-end
-
-local function loadMainTab()
+local function loadMovementTab()
     clearContent()
-    addParagraph("DI CHUYỂN CAO CẤP")
-    addSlider("Tốc độ chạy", 16, 200, 16, function(v)
+    addParagraph("TẬP TRUNG TỐC ĐỘ & ĐỘ CAO")
+    addSlider("Tốc độ chạy", 16, 250, 16, function(v)
         local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum.WalkSpeed = v end
     end)
-    addSlider("Độ cao nhảy", 50, 300, 50, function(v)
+    addSlider("Lực nhảy", 50, 350, 50, function(v)
         local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum.JumpPower = v; hum.UseJumpPower = true end
     end)
-    addToggle("Chế độ Bay (VFX)", false, toggleFly)
-    addSlider("Tốc độ Bay", 10, 200, 50, function(v) flySpeed = v end)
-    addToggle("Đi Trên Không (VFX Hex)", false, toggleAirWalk)
-    addToggle("Đi Trên Nước (VFX Splash)", false, toggleWaterWalk)
+
+    addParagraph("HACK DI CHUYỂN CAO CẤP")
+    addToggle("Noclip (Xuyên tường)", noclipActive, function(v) noclipActive = v end)
+    addToggle("Infinite Jump (Nhảy vô tận)", infJumpActive, function(v) infJumpActive = v end)
+    addToggle("Chế độ Bay tự do (VFX)", flyActive, toggleFly)
+    addSlider("Tốc độ Bay", 10, 200, flySpeed, function(v) flySpeed = v end)
 end
 
+-- 3. TAB QUAN SÁT (ESP TOÀN DIỆN CHỐNG LAG)
+local espHighlights = {}
+local espConnections = {}
+
+local function applyESP(player)
+    if player ~= LocalPlayer and player.Character then
+        local hl = player.Character:FindFirstChild("DeltaESP")
+        if not hl then
+            hl = Instance.new("Highlight", player.Character)
+            hl.Name = "DeltaESP"
+            hl.FillColor = Color3.fromRGB(255, 0, 0)
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            hl.FillTransparency = 0.5
+            espHighlights[player] = hl
+        end
+    end
+end
+
+local function loadVisualsTab()
+    clearContent()
+    addParagraph("HỆ THỐNG ĐỊNH VỊ (ESP)")
+    addToggle("Bật vẽ khung viền (Chams)", #espConnections > 0, function(v)
+        if v then
+            for _, player in ipairs(Players:GetPlayers()) do applyESP(player) end
+            espConnections["PlayerAdded"] = Players.PlayerAdded:Connect(function(player)
+                player.CharacterAdded:Connect(function()
+                    task.wait(1)
+                    if #espConnections > 0 then applyESP(player) end
+                end)
+            end)
+        else
+            if espConnections["PlayerAdded"] then espConnections["PlayerAdded"]:Disconnect() end
+            for player, hl in pairs(espHighlights) do
+                pcall(function() hl:Destroy() end)
+            end
+            espHighlights = {}
+            espConnections = {}
+        end
+    end)
+end
+
+-- 4. TAB TRẬN ĐẤU (AIMBOT & FLING)
 local function loadCombatTab()
     clearContent()
-    addParagraph("CHIẾN ĐẤU CAO CẤP")
+    addParagraph("HỆ THỐNG CHIẾN ĐẤU")
     addToggle("Aimbot khóa mục tiêu", false, function(v)
         if v then
-            _G.DeltaHubConnections["Aimbot"] = RunService.RenderStepped:Connect(function()
+            _G.DeltaHubConnections["CombatAimbot"] = RunService.RenderStepped:Connect(function()
                 local target, minDist = nil, math.huge
                 for _, player in ipairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
@@ -943,86 +818,23 @@ local function loadCombatTab()
                 if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position) end
             end)
         else
-            if _G.DeltaHubConnections["Aimbot"] then _G.DeltaHubConnections["Aimbot"]:Disconnect() end
+            if _G.DeltaHubConnections["CombatAimbot"] then _G.DeltaHubConnections["CombatAimbot"]:Disconnect() end
         end
-    end)
-end
-
-local function loadToolsTab()
-    clearContent()
-    addParagraph("HỘP CÔNG CỤ")
-    addButton("Nhận BTools", function()
-        local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
-        if not backpack then return end
-        for _, tName in ipairs({"Clone", "Delete", "Move"}) do
-            local tool = Instance.new("Tool", backpack)
-            tool.Name = "🛠️ " .. tName
-            tool.RequiresHandle = false
-            tool.Activated:Connect(function()
-                local mouse = LocalPlayer:GetMouse()
-                if mouse.Target and mouse.Target ~= workspace.Terrain then
-                    if tName == "Delete" then mouse.Target:Destroy()
-                    elseif tName == "Clone" then local c = mouse.Target:Clone() c.Parent = mouse.Target.Parent c.Position += Vector3.new(0,5,0) end
-                end
-            end)
-        end
-    end)
-end
-
-local function loadShaderTab()
-    clearContent()
-    addParagraph("TÙY CHỈNH SHADERS")
-    addSlider("Độ mờ cảnh (Blur)", 0, 40, CustomBlur.Size, function(v) CustomBlur.Size = v end)
-    addSlider("Độ tương phản (Contrast)", -1, 2, CustomColorCorr.Contrast, function(v) CustomColorCorr.Contrast = v end)
-    addSlider("Độ rực màu (Saturation)", -1, 3, CustomColorCorr.Saturation, function(v) CustomColorCorr.Saturation = v end)
-end
-
-local function loadVisualsTab()
-    clearContent()
-    addParagraph("HỆ THỐNG ESP XUYÊN TƯỜNG")
-    local highlights = {}
-    addToggle("Vẽ viền ESP", false, function(v)
-        if v then
-            local function applyESP(player)
-                if player ~= LocalPlayer and player.Character then
-                    local hl = Instance.new("Highlight", player.Character)
-                    hl.FillColor = HubStroke.Color
-                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    highlights[player] = hl
-                end
-            end
-            for _, p in ipairs(Players:GetPlayers()) do applyESP(p) end
-        else
-            for _, hl in pairs(highlights) do pcall(function() hl:Destroy() end) end
-            highlights = {}
-        end
-    end)
-end
-
-local function loadCustomTab()
-    clearContent()
-    addParagraph("TỶ LỆ HUB (UI SCALE)")
-    addSlider("Độ phóng to UI", 0.7, 1.3, currentScale, function(val)
-        currentScale = val
-        HubScale.Scale = val
     end)
 end
 
 ----------------------------------------------------
--- KHỞI TẠO TẤT CẢ CÁC SIDEBAR TABS
+-- THIẾT LẬP MENU TABS CHÍNH
 ----------------------------------------------------
 local tabs = {
-    { "🏠 Chính", loadMainTab },
     { "⚡ Siêu Nhân", loadSuperheroTab },
-    { "🎯 Tấn Công", loadCombatTab },
-    { "🛠️ Công Cụ", loadToolsTab },
-    { "✨ Shaders", loadShaderTab },
-    { "👁️ Quan Sát", loadVisualsTab },
-    { "🎨 Giao Diện", loadCustomTab }
+    { "🏃 Di Chuyển", loadMovementTab },
+    { "🎯 Chiến Đấu", loadCombatTab },
+    { "👁️ Quan Sát", loadVisualsTab }
 }
 
 for _, tabData in ipairs(tabs) do
-    local tabBtn = Instance.new("TextButton")
+    local tabBtn = Instance.new("TextButton", TabContainer)
     tabBtn.Size = UDim2.new(0.9, 0, 0, 32)
     tabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     tabBtn.Text = tabData[1]
@@ -1030,11 +842,8 @@ for _, tabData in ipairs(tabs) do
     tabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
     tabBtn.TextSize = 12
     Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 8)
-    tabBtn.Parent = TabContainer
-    
     local stroke = Instance.new("UIStroke", tabBtn)
-    stroke.Thickness = 1
-    stroke.Color = Color3.fromRGB(48, 48, 48)
+    stroke.Thickness = 1; stroke.Color = Color3.fromRGB(48, 48, 48)
 
     tabBtn.MouseButton1Click:Connect(function()
         for _, child in ipairs(TabContainer:GetChildren()) do
@@ -1051,5 +860,6 @@ for _, tabData in ipairs(tabs) do
     end)
 end
 
--- Mặc định tải trang đầu tiên
-pcall(loadMainTab)
+-- Tải Tab Mặc Định
+pcall(loadSuperheroTab)
+
