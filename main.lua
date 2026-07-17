@@ -1,865 +1,1014 @@
---[[
-    🎮 DELTA DARK ULTIMATE HUB - VERSION 10.0 (GOD EDITION) 🎮
-    - Tự động duy trì hiệu ứng Siêu Nhân sau khi hồi sinh (Respawn Proof).
-    - Mắt Laser liên tục (Hold to Shoot) + Hào quang rực lửa + Áo choàng động lực học.
-    - Nhấc người chơi bằng lực hút trọng trường mượt mà (Physics Lerped Grab).
-    - Tích hợp Widget thông tin cá nhân dành riêng cho An (7B) và Bộ đếm FPS/Ping thực tế.
-    - Bổ sung Noclip, Infinite Jump, Chams/Box ESP, và các tính năng cốt lõi.
---]]
+-- [[ QUANTUM CORE PREMIUM HUB V2 ]] --
+-- Fixed UI Positioning, Custom Cursor, Shift Lock, Dash & Double Jump
+-- Fully Optimized for Mobile (Delta/Codex) and PC
 
--- Ngắt kết nối cũ để tránh xung đột hệ thống
-if _G.DeltaHubConnections then
-    for name, connection in pairs(_G.DeltaHubConnections) do
-        if connection then pcall(function() connection:Disconnect() end) end
-    end
-end
-_G.DeltaHubConnections = {}
-
--- Load Core Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
+local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
 local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
+local Camera = workspace.CurrentCamera
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
 
--- Dọn dẹp VFX cũ
-local vfxFolder = Workspace:FindFirstChild("Delta_VFX_Storage")
-if vfxFolder then pcall(function() vfxFolder:Destroy() end) end
-vfxFolder = Instance.new("Folder", Workspace)
-vfxFolder.Name = "Delta_VFX_Storage"
-
--- Biến toàn cục kiểm soát tính năng
-local superheroActive = false
-local laserActive = false
-local grabActive = false
-local noclipActive = false
-local infJumpActive = false
-
-local grabbedPlayer = nil
-local grabConnection = nil
-local grabLaserBeam = nil
-local grabAttA, grabAttB = nil, nil
-
-----------------------------------------------------
--- 📈 BỘ ĐẾM HIỆU NĂNG (FPS & PING ENGINE)
-----------------------------------------------------
-local fpsVal, pingVal = 60, 0
-local fpsTable = {}
-task.spawn(function()
-    while task.wait(1) do
-        pingVal = math.round(stats().Network.ServerToClientPing:GetValue() * 1000)
-    end
-end)
-_G.DeltaHubConnections["FPS_Tracker"] = RunService.RenderStepped:Connect(function(dt)
-    table.insert(fpsTable, dt)
-    while #fpsTable > 0 and fpsTable[1] < os.clock() - 1 do
-        table.remove(fpsTable, 1)
-    end
-    fpsVal = #fpsTable
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = newChar:WaitForChild("Humanoid")
+    RootPart = newChar:WaitForChild("HumanoidRootPart")
 end)
 
-----------------------------------------------------
--- ⚡ ĐỊNH NGHĨA VFX SIÊU ANH HÙNG (CỰC KỲ ỔN ĐỊNH)
-----------------------------------------------------
-local function applySuperheroVFX(char)
-    if not char then return end
-    local torso = char:WaitForChild("Torso", 5) or char:WaitForChild("UpperTorso", 5)
-    if not torso then return end
+local Theme = {
+    Bg = Color3.fromRGB(15, 15, 22),
+    Sidebar = Color3.fromRGB(10, 10, 14),
+    Accent = Color3.fromRGB(0, 255, 170), -- Cyber Neon Green
+    Text = Color3.fromRGB(245, 245, 250),
+    TextMuted = Color3.fromRGB(130, 135, 145),
+    ElementBg = Color3.fromRGB(22, 22, 30),
+    Border = Color3.fromRGB(35, 35, 45)
+}
 
-    -- Dọn dẹp VFX cũ bám trên nhân vật trước khi tạo mới
-    for _, obj in ipairs(char:GetDescendants()) do
-        if obj.Name == "HeroCape" or obj.Name == "CapeTop" or obj.Name == "CapeBottom" or obj.Name == "HeroAura" then
-            pcall(function() obj:Destroy() end)
-        end
-    end
+----------------------------------------------------------------
+-- BASE INTERFACE SETUP
+----------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "QuantumCorePremium"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+pcall(function() syn.protect_gui(ScreenGui) end)
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-    -- Áo Choàng Năng Lượng (Chống rách, co giãn tự nhiên)
-    local attTop = Instance.new("Attachment", torso)
-    attTop.Name = "CapeTop"
-    attTop.Position = Vector3.new(0, 0.8, 0.55)
-
-    local attBottom = Instance.new("Attachment", torso)
-    attBottom.Name = "CapeBottom"
-    attBottom.Position = Vector3.new(0, -2.4, 1.5)
-
-    local cape = Instance.new("Beam", torso)
-    cape.Name = "HeroCape"
-    cape.Attachment0 = attTop
-    cape.Attachment1 = attBottom
-    cape.Width0 = 1.3
-    cape.Width1 = 2.5
-    cape.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 0, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 0, 10)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
-    })
-    cape.Texture = "rbxassetid://1084991219"
-    cape.TextureSpeed = 2.5
-    cape.LightEmission = 0.8
-    cape.LightInfluence = 0
-
-    -- Luồng bụi sao đỏ rực tỏa ra sau lưng
-    local spark = Instance.new("ParticleEmitter", attTop)
-    spark.Name = "HeroSparks"
-    spark.Texture = "rbxassetid://244222064"
-    spark.Color = ColorSequence.new(Color3.fromRGB(255, 30, 30))
-    spark.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0)})
-    spark.Lifetime = NumberRange.new(0.8, 1.4)
-    spark.Speed = NumberRange.new(3, 6)
-    spark.SpreadAngle = Vector2.new(20, 20)
-    spark.Acceleration = Vector3.new(0, -5, -3)
-
-    -- Hào quang đỏ bao bọc cơ thể
-    local aura = Instance.new("ParticleEmitter", torso)
-    aura.Name = "HeroAura"
-    aura.Texture = "rbxassetid://607157592"
-    aura.Color = ColorSequence.new(Color3.fromRGB(255, 10, 50))
-    aura.Size = NumberSequence.new(2, 4)
-    aura.Lifetime = NumberRange.new(0.6, 1.2)
-    aura.Rate = 18
-    aura.Speed = NumberRange.new(0.5, 2)
-    aura.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.8),
-        NumberSequenceKeypoint.new(0.5, 0.4),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-end
-
-local function removeSuperheroVFX(char)
-    if not char then return end
-    for _, obj in ipairs(char:GetDescendants()) do
-        if obj.Name == "HeroCape" or obj.Name == "CapeTop" or obj.Name == "CapeBottom" or obj.Name == "HeroAura" then
-            pcall(function() obj:Destroy() end)
-        end
-    end
-end
-
--- Tự động kích hoạt lại khi nhân vật Respawn (Sửa lỗi phiên bản cũ)
-_G.DeltaHubConnections["CharacterWatcher"] = LocalPlayer.CharacterAdded:Connect(function(newChar)
-    if superheroActive then
-        task.wait(1.5) -- Đợi nhân vật tải xong hoàn toàn
-        applySuperheroVFX(newChar)
-    end
-end)
-
-----------------------------------------------------
--- 🔥 MẮT LASER LIÊN TỤC & ĐIỀU KHIỂN TRỌNG LỰC
-----------------------------------------------------
-local shootingLaser = false
-
-local function shootLaserStream()
-    local char = LocalPlayer.Character
-    local head = char and char:FindFirstChild("Head")
-    if not head or not shootingLaser then return end
-
-    local mouse = LocalPlayer:GetMouse()
-    local targetPos = mouse.Hit.p
-
-    -- Điểm bắn từ 2 mắt
-    local leftEye = head.CFrame * CFrame.new(-0.25, 0.15, -0.6)
-    local rightEye = head.CFrame * CFrame.new(0.25, 0.15, -0.6)
-
-    local function drawSingleLaser(startPos)
-        local distance = (startPos.p - targetPos).Magnitude
-        local laser = Instance.new("Part", vfxFolder)
-        laser.Anchored = true
-        laser.CanCollide = false
-        laser.Material = Enum.Material.Neon
-        laser.Color = Color3.fromRGB(255, 0, 50)
-        laser.Size = Vector3.new(0.18, 0.18, distance)
-        laser.CFrame = CFrame.new(startPos.p, targetPos) * CFrame.new(0, 0, -distance/2)
-        Debris:AddItem(laser, 0.08)
-    end
-
-    drawSingleLaser(leftEye)
-    drawSingleLaser(rightEye)
-
-    -- Hiệu ứng bùng nổ bụi lửa đỏ tại điểm chạm
-    local impact = Instance.new("Part", vfxFolder)
-    impact.Shape = Enum.PartType.Ball
-    impact.Material = Enum.Material.Neon
-    impact.Color = Color3.fromRGB(255, 50, 0)
-    impact.Size = Vector3.new(2, 2, 2)
-    impact.Position = targetPos
-    impact.Anchored = true
-    impact.CanCollide = false
-    Debris:AddItem(impact, 0.15)
-
-    -- Lực đẩy đẩy văng các vật thể xung quanh điểm chạm
-    local exp = Instance.new("Explosion")
-    exp.Position = targetPos
-    exp.BlastRadius = 8
-    exp.BlastPressure = 150000
-    exp.Parent = vfxFolder
-end
-
--- Telekinesis Grab (Nhấc và Giữ đối thủ mượt mà)
-local function startGrabbing()
-    local mouse = LocalPlayer:GetMouse()
-    local target = mouse.Target
-    if not target then return end
-
-    local charModel = target:FindFirstAncestorOfClass("Model")
-    if charModel and charModel:FindFirstChildOfClass("Humanoid") and charModel ~= LocalPlayer.Character then
-        grabbedPlayer = charModel
-        local targetHrp = grabbedPlayer:FindFirstChild("HumanoidRootPart")
-        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        
-        if targetHrp and myHrp then
-            -- Liên kết sấm sét đỏ
-            grabAttA = Instance.new("Attachment", myHrp)
-            grabAttA.Position = Vector3.new(0, 1.5, -1)
-            grabAttB = Instance.new("Attachment", targetHrp)
-
-            grabLaserBeam = Instance.new("Beam", vfxFolder)
-            grabLaserBeam.Attachment0 = grabAttA
-            grabLaserBeam.Attachment1 = grabAttB
-            grabLaserBeam.Width0 = 0.4
-            grabLaserBeam.Width1 = 0.4
-            grabLaserBeam.Color = ColorSequence.new(Color3.fromRGB(255, 0, 50))
-            grabLaserBeam.Texture = "rbxassetid://1084991219"
-            grabLaserBeam.TextureSpeed = 8
-            grabLaserBeam.LightEmission = 1
-
-            -- Cập nhật liên tục bằng vòng lặp mượt mà
-            grabConnection = RunService.Heartbeat:Connect(function()
-                if grabbedPlayer and grabbedPlayer:Parent() and myHrp:Parent() then
-                    -- Lerp mượt mà giúp đối thủ không bị giật lag khi kéo đi
-                    local targetGoal = myHrp.CFrame * CFrame.new(0, 4, -15)
-                    targetHrp.CFrame = targetHrp.CFrame:Lerp(targetGoal, 0.25)
-                    targetHrp.Velocity = Vector3.new(0, 0, 0)
-                else
-                    stopGrabbing()
-                end
-            end)
-            _G.DeltaHubConnections["GrabSystem"] = grabConnection
-        end
-    end
-end
-
-function stopGrabbing()
-    if grabConnection then grabConnection:Disconnect() grabConnection = nil end
-    if grabLaserBeam then grabLaserBeam:Destroy() grabLaserBeam = nil end
-    if grabAttA then grabAttA:Destroy() grabAttA = nil end
-    if grabAttB then grabAttB:Destroy() grabAttB = nil end
-    grabbedPlayer = nil
-end
-
-----------------------------------------------------
--- 💎 THIẾT KẾ GUI DELTA DARK V10.0 (GOD LEVEL)
-----------------------------------------------------
-local DarkGui = Instance.new("ScreenGui")
-local coreGuiSuccess, coreGuiParent = pcall(function() return game:GetService("CoreGui") end)
-DarkGui.Parent = coreGuiSuccess and coreGuiParent or LocalPlayer:FindFirstChildOfClass("PlayerGui")
-DarkGui.Name = "DeltaUltimate_" .. tostring(math.random(1000, 9999))
-DarkGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame", DarkGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.Position = UDim2.new(0.5, -290, 0.5, -195)
+-- Main Window (Wider layout for aesthetic balance)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 580, 0, 390)
+MainFrame.Position = UDim2.new(0.5, -290, 0.5, -195)
+MainFrame.BackgroundColor3 = Theme.Bg
+MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
+MainFrame.Parent = ScreenGui
 
-local HubStroke = Instance.new("UIStroke", MainFrame)
-HubStroke.Thickness = 2
-HubStroke.Color = Color3.fromRGB(230, 30, 30)
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
 
--- Header Bar
-local HeaderBar = Instance.new("Frame", MainFrame)
-HeaderBar.Size = UDim2.new(1, 0, 0, 45)
-HeaderBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-HeaderBar.BackgroundTransparency = 0.5
-Instance.new("UICorner", HeaderBar).CornerRadius = UDim.new(0, 16)
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Theme.Accent
+MainStroke.Thickness = 1.8
+MainStroke.Parent = MainFrame
 
--- Hệ thống Kéo thả UI mượt mà
-local dragToggle, dragStart, startPos
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
-        end)
-    end
-end)
-MainFrame.InputChanged:Connect(function(input)
-    if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
+-- Topbar
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 42)
+TopBar.BackgroundTransparency = 1
+TopBar.Parent = MainFrame
 
-local Title = Instance.new("TextLabel", MainFrame)
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0.4, 0, 1, 0)
+Title.Position = UDim2.new(0, 18, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 20, 0, 11)
-Title.Size = UDim2.new(0, 350, 0, 22)
-Title.Font = Enum.Font.SourceSansBold
-Title.Text = "DELTA DARK ULTIMATE v10.0 [GOD EDITION]"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "QUANTUM CORE V2"
+Title.TextColor3 = Theme.Text
 Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
 
--- 📈 CHỈ SỐ LÀM VIỆC (REAL-TIME HUD)
-local PerfHud = Instance.new("TextLabel", MainFrame)
-PerfHud.Size = UDim2.new(0, 150, 0, 20)
-PerfHud.Position = UDim2.new(1, -230, 0, 12)
-PerfHud.BackgroundTransparency = 1
-PerfHud.Font = Enum.Font.Code
-PerfHud.TextColor3 = Color3.fromRGB(0, 255, 150)
-PerfHud.TextSize = 12
-PerfHud.TextXAlignment = Enum.TextXAlignment.Right
+local FpsLabel = Instance.new("TextLabel")
+FpsLabel.Size = UDim2.new(0.2, 0, 1, 0)
+FpsLabel.Position = UDim2.new(0.55, 0, 0, 0)
+FpsLabel.BackgroundTransparency = 1
+FpsLabel.Text = "FPS: --"
+FpsLabel.TextColor3 = Theme.Accent
+FpsLabel.TextSize = 12
+FpsLabel.Font = Enum.Font.Code
+FpsLabel.TextXAlignment = Enum.TextXAlignment.Right
+FpsLabel.Parent = TopBar
 
-task.spawn(function()
-    while task.wait(0.5) do
-        if PerfHud and PerfHud.Parent then
-            PerfHud.Text = string.format("FPS: %d | PING: %dms", fpsVal, pingVal)
-        end
-    end
-end)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -65, 0, 6)
+MinimizeBtn.BackgroundTransparency = 1
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Theme.TextMuted
+MinimizeBtn.TextSize = 22
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Parent = TopBar
 
--- Nút Thu Nhỏ / Đóng
-local TopBtnContainer = Instance.new("Frame", MainFrame)
-TopBtnContainer.Size = UDim2.new(0, 60, 0, 25)
-TopBtnContainer.Position = UDim2.new(1, -75, 0, 10)
-TopBtnContainer.BackgroundTransparency = 1
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 6)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "×"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 75, 75)
+CloseBtn.TextSize = 24
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TopBar
 
-local LayoutTop = Instance.new("UIListLayout", TopBtnContainer)
-LayoutTop.FillDirection = Enum.FillDirection.Horizontal
-LayoutTop.HorizontalAlignment = Enum.HorizontalAlignment.Right
-LayoutTop.Padding = UDim.new(0, 8)
+local Divider = Instance.new("Frame")
+Divider.Size = UDim2.new(1, 0, 0, 1)
+Divider.Position = UDim2.new(0, 0, 0, 42)
+Divider.BackgroundColor3 = Theme.Border
+Divider.Parent = MainFrame
 
-local CloseBtn = Instance.new("TextButton", TopBtnContainer)
-CloseBtn.Size = UDim2.new(0, 22, 0, 22)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.SourceSansBold
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 11
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
+----------------------------------------------------------------
+-- SIDEBAR (FIXED: User Profile at Top, Tabs List below it)
+----------------------------------------------------------------
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 160, 1, -43)
+Sidebar.Position = UDim2.new(0, 0, 0, 43)
+Sidebar.BackgroundColor3 = Theme.Sidebar
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
 
-local ShrinkBtn = Instance.new("TextButton", TopBtnContainer)
-ShrinkBtn.Size = UDim2.new(0, 22, 0, 22)
-ShrinkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ShrinkBtn.Text = "-"
-ShrinkBtn.Font = Enum.Font.SourceSansBold
-ShrinkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ShrinkBtn.TextSize = 13
-Instance.new("UICorner", ShrinkBtn).CornerRadius = UDim.new(1, 0)
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 12)
+SidebarCorner.Parent = Sidebar
 
--- Nút Tròn Thu Nhỏ Nổi
-local FloatingBtn = Instance.new("TextButton", DarkGui)
-FloatingBtn.Size = UDim2.new(0, 55, 0, 55)
-FloatingBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
-FloatingBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-FloatingBtn.Text = "🔱"
-FloatingBtn.Font = Enum.Font.SourceSansBold
-FloatingBtn.TextColor3 = Color3.fromRGB(230, 30, 30)
-FloatingBtn.TextSize = 26
+-- Patches corner issues
+local SidebarPatch = Instance.new("Frame")
+SidebarPatch.Size = UDim2.new(0, 15, 1, 0)
+SidebarPatch.Position = UDim2.new(1, -15, 0, 0)
+SidebarPatch.BackgroundColor3 = Theme.Sidebar
+SidebarPatch.BorderSizePixel = 0
+SidebarPatch.Parent = Sidebar
+
+-- USER CARD (Top-aligned in Sidebar!)
+local UserInfoFrame = Instance.new("Frame")
+UserInfoFrame.Size = UDim2.new(0, 144, 0, 52)
+UserInfoFrame.Position = UDim2.new(0, 8, 0, 8)
+UserInfoFrame.BackgroundColor3 = Theme.ElementBg
+UserInfoFrame.Parent = Sidebar
+
+local UICornerInfo = Instance.new("UICorner")
+UICornerInfo.CornerRadius = UDim.new(0, 8)
+UICornerInfo.Parent = UserInfoFrame
+
+local UIStrokeInfo = Instance.new("UIStroke")
+UIStrokeInfo.Color = Theme.Border
+UIStrokeInfo.Thickness = 1
+UIStrokeInfo.Parent = UserInfoFrame
+
+local UserVectorIcon = Instance.new("Frame")
+UserVectorIcon.Size = UDim2.new(0, 32, 0, 32)
+UserVectorIcon.Position = UDim2.new(0, 10, 0.5, -16)
+UserVectorIcon.BackgroundColor3 = Color3.fromRGB(32, 32, 45)
+UserVectorIcon.Parent = UserInfoFrame
+Instance.new("UICorner", UserVectorIcon).CornerRadius = UDim.new(1, 0)
+
+local InnerVectorNode = Instance.new("Frame", UserVectorIcon)
+InnerVectorNode.Size = UDim2.new(0, 12, 0, 12)
+InnerVectorNode.Position = UDim2.new(0.5, -6, 0.5, -6)
+InnerVectorNode.BackgroundColor3 = Theme.Accent
+Instance.new("UICorner", InnerVectorNode).CornerRadius = UDim.new(1, 0)
+
+local UsernameLabel = Instance.new("TextLabel")
+UsernameLabel.Size = UDim2.new(1, -52, 0, 18)
+UsernameLabel.Position = UDim2.new(0, 48, 0, 8)
+UsernameLabel.BackgroundTransparency = 1
+UsernameLabel.Text = string.sub(LocalPlayer.DisplayName, 1, 11)
+UsernameLabel.TextColor3 = Theme.Text
+UsernameLabel.TextSize = 12
+UsernameLabel.Font = Enum.Font.GothamBold
+UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
+UsernameLabel.Parent = UserInfoFrame
+
+local AgeLabel = Instance.new("TextLabel")
+AgeLabel.Size = UDim2.new(1, -52, 0, 14)
+AgeLabel.Position = UDim2.new(0, 48, 0, 26)
+AgeLabel.BackgroundTransparency = 1
+AgeLabel.Text = "Age: " .. LocalPlayer.AccountAge .. "d"
+AgeLabel.TextColor3 = Theme.TextMuted
+AgeLabel.TextSize = 10
+AgeLabel.Font = Enum.Font.Gotham
+AgeLabel.TextXAlignment = Enum.TextXAlignment.Left
+AgeLabel.Parent = UserInfoFrame
+
+-- Tab Buttons Scrolling Container (Positions below the User Card)
+local TabScroll = Instance.new("ScrollingFrame")
+TabScroll.Size = UDim2.new(1, 0, 1, -70)
+TabScroll.Position = UDim2.new(0, 0, 0, 68)
+TabScroll.BackgroundTransparency = 1
+TabScroll.BorderSizePixel = 0
+TabScroll.ScrollBarThickness = 0
+TabScroll.Parent = Sidebar
+
+local TabListLayout = Instance.new("UIListLayout")
+TabListLayout.Parent = TabScroll
+TabListLayout.Padding = UDim.new(0, 6)
+TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+----------------------------------------------------------------
+-- CONTAINER & CONTROLS
+----------------------------------------------------------------
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -175, 1, -52)
+Container.Position = UDim2.new(0, 170, 0, 48)
+Container.BackgroundTransparency = 1
+Container.Parent = MainFrame
+
+-- Floating Icon
+local FloatingBtn = Instance.new("TextButton")
+FloatingBtn.Size = UDim2.new(0, 45, 0, 45)
+FloatingBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
+FloatingBtn.BackgroundColor3 = Theme.Bg
+FloatingBtn.Text = "⚡"
+FloatingBtn.TextColor3 = Theme.Accent
+FloatingBtn.TextSize = 20
+FloatingBtn.Font = Enum.Font.GothamBold
 FloatingBtn.Visible = false
-Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
-local FloatStroke = Instance.new("UIStroke", FloatingBtn)
-FloatStroke.Thickness = 2
-FloatStroke.Color = Color3.fromRGB(230, 30, 30)
+FloatingBtn.Parent = ScreenGui
 
-local floatDrag, floatStart, floatFramePos
-FloatingBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        floatDrag = true; floatStart = input.Position; floatFramePos = FloatingBtn.Position
-        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then floatDrag = false end end)
-    end
-end)
-FloatingBtn.InputChanged:Connect(function(input)
-    if floatDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - floatStart
-        FloatingBtn.Position = UDim2.new(floatFramePos.X.Scale, floatFramePos.X.Offset + delta.X, floatFramePos.Y.Scale, floatFramePos.Y.Offset + delta.Y)
-    end
-end)
+local FloatCorner = Instance.new("UICorner")
+FloatCorner.CornerRadius = UDim.new(1, 0)
+FloatCorner.Parent = FloatingBtn
 
-ShrinkBtn.MouseButton1Click:Connect(function()
-    MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true, function()
-        MainFrame.Visible = false
-        FloatingBtn.Visible = true
-    end)
-end)
+local FloatStroke = Instance.new("UIStroke")
+FloatStroke.Color = Theme.Accent
+FloatStroke.Thickness = 1.5
+FloatStroke.Parent = FloatingBtn
 
-FloatingBtn.MouseButton1Click:Connect(function()
-    FloatingBtn.Visible = false
-    MainFrame.Visible = true
-    MainFrame:TweenSize(UDim2.new(0, 580, 0, 390), "Out", "Quad", 0.3, true)
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    stopGrabbing()
-    removeSuperheroVFX(LocalPlayer.Character)
-    pcall(function() vfxFolder:Destroy() end)
-    pcall(function() if _G.DeltaHubConnections then for _, c in pairs(_G.DeltaHubConnections) do c:Disconnect() end end end)
-    DarkGui:Destroy()
-end)
-
-----------------------------------------------------
--- 👤 WIDGET THÔNG TIN TÀI KHOẢN ĐỘC QUYỀN (AN - 7B)
-----------------------------------------------------
-local SidebarContainer = Instance.new("Frame", MainFrame)
-SidebarContainer.Size = UDim2.new(0, 140, 1, -65)
-SidebarContainer.Position = UDim2.new(0, 12, 0, 53)
-SidebarContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Instance.new("UICorner", SidebarContainer).CornerRadius = UDim.new(0, 12)
-
-local ProfileCard = Instance.new("Frame", SidebarContainer)
-ProfileCard.Size = UDim2.new(1, 0, 0, 110)
-ProfileCard.BackgroundTransparency = 1
-
-local AvatarImg = Instance.new("ImageLabel", ProfileCard)
-AvatarImg.Size = UDim2.new(0, 50, 0, 50)
-AvatarImg.Position = UDim2.new(0.5, -25, 0, 10)
-AvatarImg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", AvatarImg).CornerRadius = UDim.new(1, 0)
-
--- Lấy ảnh Avatar thật của người chơi
-pcall(function()
-    local userId = LocalPlayer.UserId
-    local thumbType = Enum.ThumbnailType.HeadShot
-    local thumbSize = Enum.ThumbnailSize.Size100x100
-    local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
-    if isReady then AvatarImg.Image = content end
-end)
-
-local UserWelcome = Instance.new("TextLabel", ProfileCard)
-UserWelcome.Size = UDim2.new(1, 0, 0, 20)
-UserWelcome.Position = UDim2.new(0, 0, 0, 65)
-UserWelcome.BackgroundTransparency = 1
-UserWelcome.Font = Enum.Font.SourceSansBold
-UserWelcome.Text = "Chào An!"
-UserWelcome.TextColor3 = Color3.fromRGB(255, 215, 0)
-UserWelcome.TextSize = 13
-
-local ClassTag = Instance.new("TextLabel", ProfileCard)
-ClassTag.Size = UDim2.new(1, 0, 0, 15)
-ClassTag.Position = UDim2.new(0, 0, 0, 82)
-ClassTag.BackgroundTransparency = 1
-ClassTag.Font = Enum.Font.SourceSansItalic
-ClassTag.Text = "Lớp 7B - Quang Hà 2"
-ClassTag.TextColor3 = Color3.fromRGB(180, 180, 180)
-ClassTag.TextSize = 11
-
--- Các Tabs di chuyển xuống dưới Profile Card
-local TabContainer = Instance.new("ScrollingFrame", SidebarContainer)
-TabContainer.Size = UDim2.new(1, 0, 1, -115)
-TabContainer.Position = UDim2.new(0, 0, 0, 115)
-TabContainer.BackgroundTransparency = 1
-TabContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0)
-TabContainer.ScrollBarThickness = 0
-
-local TabList = Instance.new("UIListLayout", TabContainer)
-TabList.Padding = UDim.new(0, 6)
-TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
--- Content Box bên phải
-local ContentContainer = Instance.new("ScrollingFrame", MainFrame)
-ContentContainer.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-ContentContainer.Position = UDim2.new(0, 162, 0, 53)
-ContentContainer.Size = UDim2.new(1, -174, 1, -65)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 1.6, 0)
-ContentContainer.ScrollBarThickness = 3
-ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
-Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 12)
-
-local ContentLayout = Instance.new("UIListLayout", ContentContainer)
-ContentLayout.Padding = UDim.new(0, 12)
-ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ContentContainer.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 25)
-end)
-
-----------------------------------------------------
--- DYNAMIC COMPONENTS BUILDER
-----------------------------------------------------
-local function clearContent()
-    for _, child in ipairs(ContentContainer:GetChildren()) do
-        if not child:IsA("UIListLayout") then child:Destroy() end
-    end
-end
-
-local function addParagraph(text)
-    local frame = Instance.new("Frame", ContentContainer)
-    frame.Size = UDim2.new(0.94, 0, 0, 24)
-    frame.BackgroundTransparency = 1
-    local p = Instance.new("TextLabel", frame)
-    p.Size = UDim2.new(1, 0, 1, 0)
-    p.BackgroundTransparency = 1
-    p.Font = Enum.Font.SourceSansBold
-    p.Text = "⚡  " .. text:upper()
-    p.TextColor3 = HubStroke.Color
-    p.TextSize = 13
-    p.TextXAlignment = Enum.TextXAlignment.Left
-end
-
-local function addButton(name, callback)
-    local btn = Instance.new("TextButton", ContentContainer)
-    btn.Size = UDim2.new(0.94, 0, 0, 36)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    btn.Text = name
-    btn.Font = Enum.Font.SourceSansSemibold
-    btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    btn.TextSize = 13
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Thickness = 1; stroke.Color = Color3.fromRGB(45, 45, 45)
-    
-    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40) end)
-    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30) end)
-    btn.MouseButton1Click:Connect(function() pcall(callback) end)
-end
-
-local function addToggle(name, default, callback)
-    local active = default
-    local btn = Instance.new("TextButton", ContentContainer)
-    btn.Size = UDim2.new(0.94, 0, 0, 36)
-    btn.BackgroundColor3 = active and HubStroke.Color or Color3.fromRGB(30, 30, 30)
-    btn.Text = name .. (active and " [BẬT]" or " [TẮT]")
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
-    btn.TextSize = 13
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Thickness = 1; stroke.Color = active and HubStroke.Color or Color3.fromRGB(45, 45, 45)
-
-    btn.MouseButton1Click:Connect(function()
-        active = not active
-        btn.BackgroundColor3 = active and HubStroke.Color or Color3.fromRGB(30, 30, 30)
-        btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 180, 180)
-        stroke.Color = active and HubStroke.Color or Color3.fromRGB(45, 45, 45)
-        btn.Text = name .. (active and " [BẬT]" or " [TẮT]")
-        pcall(callback, active)
-    end)
-end
-
-local function addSlider(name, min, max, default, callback)
-    local container = Instance.new("Frame", ContentContainer)
-    container.Size = UDim2.new(0.94, 0, 0, 48)
-    container.BackgroundTransparency = 1
-
-    local valLabel = Instance.new("TextLabel", container)
-    valLabel.Size = UDim2.new(1, 0, 0, 18)
-    valLabel.BackgroundTransparency = 1
-    valLabel.Font = Enum.Font.SourceSansSemibold
-    valLabel.Text = name .. ": " .. tostring(default)
-    valLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    valLabel.TextSize = 12
-    valLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local sliderBg = Instance.new("TextButton", container)
-    sliderBg.Size = UDim2.new(1, 0, 0, 8)
-    sliderBg.Position = UDim2.new(0, 0, 0, 24)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    sliderBg.Text = ""
-    Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
-
-    local sliderBar = Instance.new("Frame", sliderBg)
-    sliderBar.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-    sliderBar.BackgroundColor3 = HubStroke.Color
-    Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(1, 0)
-
-    local dragging = false
-    local function updateSlider(input)
-        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
-        local val = min + (max - min) * pos
-        val = math.round(val)
-        sliderBar.Size = UDim2.new(pos, 0, 1, 0)
-        valLabel.Text = name .. ": " .. tostring(val)
-        pcall(callback, val)
-    end
-
-    sliderBg.InputBegan:Connect(function(input)
+----------------------------------------------------------------
+-- DRAG ENGINE (PC & MOBILE)
+----------------------------------------------------------------
+local function applyDragSupport(frame)
+    local dragStart, startPos
+    frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; updateSlider(input)
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragStart = nil end
+            end)
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            updateSlider(input)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragStart then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 end
+applyDragSupport(MainFrame)
+applyDragSupport(FloatingBtn)
 
-----------------------------------------------------
--- CÁC TAB CHỨC NĂNG CHÍNH ĐÃ ĐƯỢC TỐI ƯU HÓA
-----------------------------------------------------
+----------------------------------------------------------------
+-- CUSTOM VECTOR ICONS (PRECISE DRAWING)
+----------------------------------------------------------------
+local function CreateVectorIcon(parent, iconType)
+    local iconFrame = Instance.new("Frame")
+    iconFrame.Size = UDim2.new(0, 18, 0, 18)
+    iconFrame.BackgroundTransparency = 1
+    iconFrame.Position = UDim2.new(0, 12, 0.5, -9)
+    iconFrame.Parent = parent
 
--- 1. TAB SIÊU NHÂN (CựC KỲ HOÀN THIỆN)
-local function loadSuperheroTab()
-    clearContent()
-    addParagraph("CHẾ ĐỘ SIÊU ANH HÙNG (RESPAWN PROOF)")
-    addToggle("Kích Hoạt Siêu Nhân (Áo choàng + Aura)", superheroActive, function(v)
-        superheroActive = v
-        local char = LocalPlayer.Character
-        if v then
-            if char then applySuperheroVFX(char) end
-        else
-            if char then removeSuperheroVFX(char) end
+    if iconType == "Main" then
+        -- Clean Diamond Node
+        local d = Instance.new("Frame", iconFrame)
+        d.Size = UDim2.new(0, 10, 0, 10)
+        d.Position = UDim2.new(0.5, -5, 0.5, -5)
+        d.Rotation = 45
+        d.BackgroundColor3 = Theme.TextMuted
+        d.BorderSizePixel = 0
+        Instance.new("UICorner", d).CornerRadius = UDim.new(0, 2)
+    elseif iconType == "Combat" then
+        -- Tactical Scope
+        local outer = Instance.new("Frame", iconFrame)
+        outer.Size = UDim2.new(1, 0, 1, 0)
+        outer.BackgroundTransparency = 1
+        local st = Instance.new("UIStroke", outer)
+        st.Color = Theme.TextMuted
+        st.Thickness = 1.5
+        Instance.new("UICorner", outer).CornerRadius = UDim.new(1, 0)
+        local center = Instance.new("Frame", iconFrame)
+        center.Size = UDim2.new(0, 4, 0, 4)
+        center.Position = UDim2.new(0.5, -2, 0.5, -2)
+        center.BackgroundColor3 = Theme.TextMuted
+        Instance.new("UICorner", center).CornerRadius = UDim.new(1, 0)
+    elseif iconType == "Visuals" then
+        -- Modern Adjustment Sliders
+        local line = Instance.new("Frame", iconFrame)
+        line.Size = UDim2.new(1, 0, 0, 2)
+        line.Position = UDim2.new(0, 0, 0.5, -1)
+        line.BackgroundColor3 = Theme.TextMuted
+        local block = Instance.new("Frame", iconFrame)
+        block.Size = UDim2.new(0, 6, 0, 10)
+        block.Position = UDim2.new(0.2, 0, 0.5, -5)
+        block.BackgroundColor3 = Theme.TextMuted
+    elseif iconType == "Build" then
+        -- Wireframe Brick Isometric
+        local box = Instance.new("Frame", iconFrame)
+        box.Size = UDim2.new(1, 0, 0.7, 0)
+        box.Position = UDim2.new(0, 0, 0.15, 0)
+        box.BackgroundTransparency = 1
+        local st = Instance.new("UIStroke", box)
+        st.Color = Theme.TextMuted
+        st.Thickness = 1.5
+    elseif iconType == "Movement" then
+        -- Movement Arrow Vectors
+        local wingLeft = Instance.new("Frame", iconFrame)
+        wingLeft.Size = UDim2.new(0, 2, 0, 10)
+        wingLeft.Position = UDim2.new(0.3, 0, 0.2, 0)
+        wingLeft.Rotation = 35
+        wingLeft.BackgroundColor3 = Theme.TextMuted
+        local wingRight = Instance.new("Frame", iconFrame)
+        wingRight.Size = UDim2.new(0, 2, 0, 10)
+        wingRight.Position = UDim2.new(0.7, -2, 0.2, 0)
+        wingRight.Rotation = -35
+        wingRight.BackgroundColor3 = Theme.TextMuted
+    elseif iconType == "Settings" then
+        -- Gears / Interactive Nodes
+        for i = 1, 3 do
+            local dot = Instance.new("Frame", iconFrame)
+            dot.Size = UDim2.new(0, 4, 0, 4)
+            dot.Position = UDim2.new(0, (i-1)*5 + 2, 0.5, -2)
+            dot.BackgroundColor3 = Theme.TextMuted
+            Instance.new("UICorner", dot)
         end
-    end)
+    end
+end
 
-    addParagraph("SIÊU NĂNG LỰC TẤN CÔNG")
-    addToggle("Mắt Bắn Laser (Nhấn giữ chuột trái)", laserActive, function(v)
-        laserActive = v
-        if v then
-            -- Bắt sự kiện Nhấn và Giữ chuột trái để phun laser liên tục không giới hạn
-            _G.DeltaHubConnections["LaserMouseDown"] = UserInputService.InputBegan:Connect(function(input, gpe)
-                if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    shootingLaser = true
-                    task.spawn(function()
-                        while shootingLaser and laserActive do
-                            shootLaserStream()
-                            task.wait(0.05) -- Tốc độ nháy tia hạt cực cao
+----------------------------------------------------------------
+-- TABS SCHEMATICS
+----------------------------------------------------------------
+local function CreateTab(name, vectorType)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Size = UDim2.new(0, 144, 0, 36)
+    TabButton.BackgroundTransparency = 1
+    TabButton.Text = "         " .. name -- Shifted right to prevent text clipping onto icons!
+    TabButton.TextColor3 = Theme.TextMuted
+    TabButton.TextSize = 13
+    TabButton.Font = Enum.Font.GothamSemibold
+    TabButton.TextXAlignment = Enum.TextXAlignment.Left
+    TabButton.Parent = TabScroll
+
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = UDim.new(0, 6)
+    TabCorner.Parent = TabButton
+
+    CreateVectorIcon(TabButton, vectorType)
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Size = UDim2.new(1, -5, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.BorderSizePixel = 0
+    Page.ScrollBarThickness = 2
+    Page.ScrollBarImageColor3 = Theme.Border
+    Page.Visible = false
+    Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Page.Parent = Container
+
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.Parent = Page
+    PageLayout.Padding = UDim.new(0, 8)
+    PageLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local PagePadding = Instance.new("UIPadding")
+    PagePadding.PaddingTop = UDim.new(0, 6)
+    PagePadding.Parent = Page
+
+    TabButton.MouseButton1Click:Connect(function()
+        for _, btn in ipairs(TabScroll:GetChildren()) do
+            if btn:IsA("TextButton") then
+                TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = Theme.TextMuted, BackgroundTransparency = 1}):Play()
+                for _, ch in ipairs(btn:GetChildren()) do
+                    if ch:IsA("Frame") then
+                        for _, sub in ipairs(ch:GetChildren()) do
+                            if sub:IsA("UIStroke") then sub.Color = Theme.TextMuted
+                            elseif sub:IsA("Frame") then sub.BackgroundColor3 = Theme.TextMuted end
                         end
-                    end)
-                end
-            end)
-            _G.DeltaHubConnections["LaserMouseUp"] = UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    shootingLaser = false
-                end
-            end)
-        else
-            shootingLaser = false
-            if _G.DeltaHubConnections["LaserMouseDown"] then _G.DeltaHubConnections["LaserMouseDown"]:Disconnect() end
-            if _G.DeltaHubConnections["LaserMouseUp"] then _G.DeltaHubConnections["LaserMouseUp"]:Disconnect() end
-        end
-    end)
-
-    addToggle("Nhấc Người Chơi (Click chọn mục tiêu)", grabActive, function(v)
-        grabActive = v
-        if v then
-            _G.DeltaHubConnections["GrabClick"] = UserInputService.InputBegan:Connect(function(input, gpe)
-                if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 and grabActive then
-                    if not grabbedPlayer then
-                        startGrabbing()
-                    else
-                        stopGrabbing()
                     end
                 end
-            end)
-        else
-            stopGrabbing()
-            if _G.DeltaHubConnections["GrabClick"] then _G.DeltaHubConnections["GrabClick"]:Disconnect() end
+            end
         end
-    end)
-    addButton("Thả người chơi đang nhấc bổng", stopGrabbing)
-end
-
--- 2. TAB DI CHUYỂN CAO CẤP (Bao gồm Noclip & Inf Jump)
-local flyActive = false
-local flySpeed = 50
-local flyConn = nil
-
-local function toggleFly(Value)
-    flyActive = Value
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return end
-    
-    if flyActive then
-        local bv = Instance.new("BodyVelocity", hrp)
-        bv.Name = "DarkFlyBV"; bv.MaxForce = Vector3.new(1e9, 1e9, 1e9); bv.Velocity = Vector3.new(0,0,0)
-        local bg = Instance.new("BodyGyro", hrp)
-        bg.Name = "DarkFlyBG"; bg.MaxTorque = Vector3.new(1e9, 1e9, 1e9); bg.CFrame = hrp.CFrame
-        hum.PlatformStand = true
+        for _, pg in ipairs(Container:GetChildren()) do
+            if pg:IsA("ScrollingFrame") then pg.Visible = false end
+        end
+        TweenService:Create(TabButton, TweenInfo.new(0.2), {TextColor3 = Theme.Accent, BackgroundTransparency = 0.9, BackgroundColor3 = Theme.Accent}):Play()
         
-        -- Hiệu ứng vòng tròn gió khí động học khi bay
-        local flyTrail = Instance.new("ParticleEmitter", hrp)
-        flyTrail.Name = "FlyWindVFX"
-        flyTrail.Texture = "rbxassetid://312301912"
-        flyTrail.Color = ColorSequence.new(Color3.fromRGB(240, 240, 255))
-        flyTrail.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1.5), NumberSequenceKeypoint.new(1, 4)})
-        flyTrail.Lifetime = NumberRange.new(0.4, 0.7)
-        flyTrail.Speed = NumberRange.new(2, 5)
-        flyTrail.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1)})
-        flyTrail.Rate = 25
-
-        flyConn = RunService.RenderStepped:Connect(function()
-            local currentHrp = char:FindFirstChild("HumanoidRootPart")
-            local curBV = currentHrp and currentHrp:FindFirstChild("DarkFlyBV")
-            local curBG = currentHrp and currentHrp:FindFirstChild("DarkFlyBG")
-            if not curBV or not curBG then return end
-            
-            local moveDir = Vector3.new(0,0,0)
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Camera.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Camera.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Camera.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Camera.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-            
-            if hum.MoveDirection.Magnitude > 0 then moveDir = moveDir + hum.MoveDirection end
-            curBG.CFrame = Camera.CFrame
-            curBV.Velocity = moveDir.Magnitude > 0 and moveDir.Unit * flySpeed or Vector3.new(0,0,0)
-        end)
-        _G.DeltaHubConnections["Fly"] = flyConn
-    else
-        if flyConn then flyConn:Disconnect() flyConn = nil end
-        if hrp then
-            local bv = hrp:FindFirstChild("DarkFlyBV") if bv then bv:Destroy() end
-            local bg = hrp:FindFirstChild("DarkFlyBG") if bg then bg:Destroy() end
-            local trail = hrp:FindFirstChild("FlyWindVFX") if trail then trail:Destroy() end
-        end
-        if hum then hum.PlatformStand = false end
-    end
-end
-
--- NOCLIP (Đi xuyên tường cực mượt)
-task.spawn(function()
-    _G.DeltaHubConnections["NoclipLoop"] = RunService.Stepped:Connect(function()
-        if noclipActive and LocalPlayer.Character then
-            for _, child in ipairs(LocalPlayer.Character:GetDescendants()) do
-                if child:IsA("BasePart") then child.CanCollide = false end
-            end
-        end
-    end)
-end)
-
--- INFINITE JUMP (Nhảy vô hạn trên không)
-_G.DeltaHubConnections["InfJump"] = UserInputService.JumpRequest:Connect(function()
-    if infJumpActive and LocalPlayer.Character then
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
-
-local function loadMovementTab()
-    clearContent()
-    addParagraph("TẬP TRUNG TỐC ĐỘ & ĐỘ CAO")
-    addSlider("Tốc độ chạy", 16, 250, 16, function(v)
-        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = v end
-    end)
-    addSlider("Lực nhảy", 50, 350, 50, function(v)
-        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.JumpPower = v; hum.UseJumpPower = true end
-    end)
-
-    addParagraph("HACK DI CHUYỂN CAO CẤP")
-    addToggle("Noclip (Xuyên tường)", noclipActive, function(v) noclipActive = v end)
-    addToggle("Infinite Jump (Nhảy vô tận)", infJumpActive, function(v) infJumpActive = v end)
-    addToggle("Chế độ Bay tự do (VFX)", flyActive, toggleFly)
-    addSlider("Tốc độ Bay", 10, 200, flySpeed, function(v) flySpeed = v end)
-end
-
--- 3. TAB QUAN SÁT (ESP TOÀN DIỆN CHỐNG LAG)
-local espHighlights = {}
-local espConnections = {}
-
-local function applyESP(player)
-    if player ~= LocalPlayer and player.Character then
-        local hl = player.Character:FindFirstChild("DeltaESP")
-        if not hl then
-            hl = Instance.new("Highlight", player.Character)
-            hl.Name = "DeltaESP"
-            hl.FillColor = Color3.fromRGB(255, 0, 0)
-            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-            hl.FillTransparency = 0.5
-            espHighlights[player] = hl
-        end
-    end
-end
-
-local function loadVisualsTab()
-    clearContent()
-    addParagraph("HỆ THỐNG ĐỊNH VỊ (ESP)")
-    addToggle("Bật vẽ khung viền (Chams)", #espConnections > 0, function(v)
-        if v then
-            for _, player in ipairs(Players:GetPlayers()) do applyESP(player) end
-            espConnections["PlayerAdded"] = Players.PlayerAdded:Connect(function(player)
-                player.CharacterAdded:Connect(function()
-                    task.wait(1)
-                    if #espConnections > 0 then applyESP(player) end
-                end)
-            end)
-        else
-            if espConnections["PlayerAdded"] then espConnections["PlayerAdded"]:Disconnect() end
-            for player, hl in pairs(espHighlights) do
-                pcall(function() hl:Destroy() end)
-            end
-            espHighlights = {}
-            espConnections = {}
-        end
-    end)
-end
-
--- 4. TAB TRẬN ĐẤU (AIMBOT & FLING)
-local function loadCombatTab()
-    clearContent()
-    addParagraph("HỆ THỐNG CHIẾN ĐẤU")
-    addToggle("Aimbot khóa mục tiêu", false, function(v)
-        if v then
-            _G.DeltaHubConnections["CombatAimbot"] = RunService.RenderStepped:Connect(function()
-                local target, minDist = nil, math.huge
-                for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                        local screenPos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
-                        if onScreen then
-                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - UserInputService:GetMouseLocation()).Magnitude
-                            if dist < minDist and dist < 250 then minDist = dist; target = player end
-                        end
-                    end
+        for _, ch in ipairs(TabButton:GetChildren()) do
+            if ch:IsA("Frame") then
+                for _, sub in ipairs(ch:GetChildren()) do
+                    if sub:IsA("UIStroke") then sub.Color = Theme.Accent
+                    elseif sub:IsA("Frame") then sub.BackgroundColor3 = Theme.Accent end
                 end
-                if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position) end
-            end)
-        else
-            if _G.DeltaHubConnections["CombatAimbot"] then _G.DeltaHubConnections["CombatAimbot"]:Disconnect() end
-        end
-    end)
-end
-
-----------------------------------------------------
--- THIẾT LẬP MENU TABS CHÍNH
-----------------------------------------------------
-local tabs = {
-    { "⚡ Siêu Nhân", loadSuperheroTab },
-    { "🏃 Di Chuyển", loadMovementTab },
-    { "🎯 Chiến Đấu", loadCombatTab },
-    { "👁️ Quan Sát", loadVisualsTab }
-}
-
-for _, tabData in ipairs(tabs) do
-    local tabBtn = Instance.new("TextButton", TabContainer)
-    tabBtn.Size = UDim2.new(0.9, 0, 0, 32)
-    tabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    tabBtn.Text = tabData[1]
-    tabBtn.Font = Enum.Font.SourceSansBold
-    tabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-    tabBtn.TextSize = 12
-    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 8)
-    local stroke = Instance.new("UIStroke", tabBtn)
-    stroke.Thickness = 1; stroke.Color = Color3.fromRGB(48, 48, 48)
-
-    tabBtn.MouseButton1Click:Connect(function()
-        for _, child in ipairs(TabContainer:GetChildren()) do
-            if child:IsA("TextButton") then 
-                child.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                child.TextColor3 = Color3.fromRGB(180, 180, 180)
-                child:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(48, 48, 48)
             end
         end
-        tabBtn.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-        tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        stroke.Color = HubStroke.Color
-        pcall(tabData[2])
+        Page.Visible = true
+    end)
+
+    return Page
+end
+
+----------------------------------------------------------------
+-- INTERFACE CORE GENERATORS
+----------------------------------------------------------------
+local function AddToggle(page, text, default, callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(0, 385, 0, 38)
+    ToggleFrame.BackgroundColor3 = Theme.ElementBg
+    ToggleFrame.Parent = page
+
+    local TFCorner = Instance.new("UICorner")
+    TFCorner.CornerRadius = UDim.new(0, 6)
+    TFCorner.Parent = ToggleFrame
+
+    local TFStroke = Instance.new("UIStroke")
+    TFStroke.Color = Theme.Border
+    TFStroke.Parent = ToggleFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Theme.Text
+    Label.TextSize = 12
+    Label.Font = Enum.Font.GothamSemibold
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = ToggleFrame
+
+    local Switch = Instance.new("Frame")
+    Switch.Size = UDim2.new(0, 34, 0, 16)
+    Switch.Position = UDim2.new(1, -46, 0.5, -8)
+    Switch.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    Switch.Parent = ToggleFrame
+    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+
+    local Indicator = Instance.new("Frame")
+    Indicator.Size = UDim2.new(0, 12, 0, 12)
+    Indicator.Position = UDim2.new(0, 2, 0.5, -6)
+    Indicator.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+    Indicator.Parent = Switch
+    Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
+
+    local state = default
+    local function update()
+        if state then
+            TweenService:Create(Switch, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Accent}):Play()
+            TweenService:Create(Indicator, TweenInfo.new(0.15), {Position = UDim2.new(1, -14, 0.5, -6), BackgroundColor3 = Theme.Bg}):Play()
+        else
+            TweenService:Create(Switch, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
+            TweenService:Create(Indicator, TweenInfo.new(0.15), {Position = UDim2.new(0, 2, 0.5, -6), BackgroundColor3 = Color3.fromRGB(180, 180, 180)}):Play()
+        end
+    end
+    update()
+
+    local Hit = Instance.new("TextButton")
+    Hit.Size = UDim2.new(1, 0, 1, 0)
+    Hit.BackgroundTransparency = 1
+    Hit.Text = ""
+    Hit.Parent = ToggleFrame
+    Hit.MouseButton1Click:Connect(function() state = not state; update(); callback(state) end)
+end
+
+local function AddAdjuster(page, text, default, min, max, step, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 385, 0, 38)
+    Frame.BackgroundColor3 = Theme.ElementBg
+    Frame.Parent = page
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+    local s = Instance.new("UIStroke", Frame) s.Color = Theme.Border
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.5, 0, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Theme.Text
+    Label.TextSize = 12
+    Label.Font = Enum.Font.GothamSemibold
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
+
+    local val = default
+    local Disp = Instance.new("TextLabel")
+    Disp.Size = UDim2.new(0, 45, 0, 22)
+    Disp.Position = UDim2.new(1, -80, 0.5, -11)
+    Disp.BackgroundTransparency = 1
+    Disp.Text = tostring(val)
+    Disp.TextColor3 = Theme.Accent
+    Disp.TextSize = 13
+    Disp.Font = Enum.Font.GothamBold
+    Disp.Parent = Frame
+
+    local M = Instance.new("TextButton")
+    M.Size = UDim2.new(0, 22, 0, 22)
+    M.Position = UDim2.new(1, -110, 0.5, -11)
+    M.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    M.Text = "-" M.TextColor3 = Theme.Text M.TextSize = 14 M.Font = Enum.Font.GothamBold M.Parent = Frame
+    Instance.new("UICorner", M).CornerRadius = UDim.new(0, 4)
+
+    local P = Instance.new("TextButton")
+    P.Size = UDim2.new(0, 22, 0, 22)
+    P.Position = UDim2.new(1, -30, 0.5, -11)
+    P.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    P.Text = "+" P.TextColor3 = Theme.Text P.TextSize = 14 P.Font = Enum.Font.GothamBold P.Parent = Frame
+    Instance.new("UICorner", P).CornerRadius = UDim.new(0, 4)
+
+    M.MouseButton1Click:Connect(function()
+        if val - step >= min then val = val - step; Disp.Text = tostring(val); callback(val) end
+    end)
+    P.MouseButton1Click:Connect(function()
+        if val + step <= max then val = val + step; Disp.Text = tostring(val); callback(val) end
     end)
 end
 
--- Tải Tab Mặc Định
-pcall(loadSuperheroTab)
+local function AddTextBox(page, placeholder, callback)
+    local BoxFrame = Instance.new("Frame")
+    BoxFrame.Size = UDim2.new(0, 385, 0, 38)
+    BoxFrame.BackgroundColor3 = Theme.ElementBg
+    BoxFrame.Parent = page
+    Instance.new("UICorner", BoxFrame).CornerRadius = UDim.new(0, 6)
+    local s = Instance.new("UIStroke", BoxFrame) s.Color = Theme.Border
+
+    local Box = Instance.new("TextBox")
+    Box.Size = UDim2.new(1, -24, 1, 0)
+    Box.Position = UDim2.new(0, 12, 0, 0)
+    Box.BackgroundTransparency = 1
+    Box.PlaceholderText = placeholder
+    Box.Text = ""
+    Box.TextColor3 = Theme.Text
+    Box.PlaceholderColor3 = Theme.TextMuted
+    Box.TextSize = 12
+    Box.Font = Enum.Font.GothamSemibold
+    Box.TextXAlignment = Enum.TextXAlignment.Left
+    Box.Parent = BoxFrame
+
+    Box.FocusLost:Connect(function(enterPressed) callback(Box.Text) end)
+end
+
+local function AddButton(page, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 385, 0, 38)
+    Btn.BackgroundColor3 = Theme.ElementBg
+    Btn.Text = text; Btn.TextColor3 = Theme.Text; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamSemibold; Btn.Parent = page
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    local s = Instance.new("UIStroke", Btn) s.Color = Theme.Border
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+local function AddLabel(page, text, alignment)
+    local InfoLabel = Instance.new("TextLabel")
+    InfoLabel.Size = UDim2.new(0, 385, 0, 24)
+    InfoLabel.BackgroundTransparency = 1
+    InfoLabel.Text = text
+    InfoLabel.TextColor3 = Theme.TextMuted
+    InfoLabel.TextSize = 12
+    InfoLabel.Font = Enum.Font.Gotham
+    InfoLabel.TextXAlignment = alignment or Enum.TextXAlignment.Center
+    InfoLabel.Parent = page
+end
+
+----------------------------------------------------------------
+-- GAME MECHANICS ENGINES
+----------------------------------------------------------------
+-- 1. FPS Tracker
+local frameCount = 0
+local nextUpdate = os.clock() + 1
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    if os.clock() >= nextUpdate then
+        FpsLabel.Text = "FPS: " .. frameCount
+        frameCount = 0
+        nextUpdate = os.clock() + 1
+    end
+end)
+
+-- 2. Fly & Trail Engine
+local flying = false
+local flySpeed = 60
+local bv, bg
+local trailEnabled = false
+local activeTrails = {}
+
+local function setupTrail()
+    if not Character then return end
+    local leftLeg = Character:FindFirstChild("LeftFoot") or Character:FindFirstChild("Left Leg")
+    local rightLeg = Character:FindFirstChild("RightFoot") or Character:FindFirstChild("Right Leg")
+    if not leftLeg or not rightLeg then return end
+
+    for _, item in ipairs(activeTrails) do item:Destroy() end
+    activeTrails = {}
+
+    local att0 = Instance.new("Attachment", leftLeg)
+    local att1 = Instance.new("Attachment", rightLeg)
+
+    local trail = Instance.new("Trail")
+    trail.Attachment0 = att0
+    trail.Attachment1 = att1
+    trail.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Theme.Accent),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 128)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+    })
+    trail.LightEmission = 1
+    trail.LightInfluence = 0
+    trail.Lifetime = 0.6
+    trail.WidthScale = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1.2),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    trail.Enabled = trailEnabled
+    trail.Parent = Character
+
+    table.insert(activeTrails, trail)
+    table.insert(activeTrails, att0)
+    table.insert(activeTrails, att1)
+end
+
+local function startFlying()
+    if not Character or not RootPart then return end
+    bv = Instance.new("BodyVelocity", RootPart)
+    bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bg = Instance.new("BodyGyro", RootPart)
+    bg.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    Humanoid.PlatformStand = true
+
+    if trailEnabled then
+        setupTrail()
+        for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = true end end
+    end
+
+    task.spawn(function()
+        while flying and Character and RootPart do
+            local camera = workspace.CurrentCamera
+            local moveDir = Humanoid.MoveDirection
+            local flyDir = Vector3.new(0,0,0)
+            if moveDir.Magnitude > 0 then
+                local rawDir = camera.CFrame:VectorToObjectSpace(moveDir)
+                local direction = (camera.CFrame.LookVector * -rawDir.Z) + (camera.CFrame.RightVector * rawDir.X)
+                if direction.Magnitude > 0 then flyDir = direction.Unit end
+            end
+            bv.Velocity = flyDir * flySpeed
+            if flyDir.Magnitude > 0 then
+                bg.CFrame = CFrame.lookAt(RootPart.Position, RootPart.Position + flyDir) * CFrame.Angles(math.rad(-60), 0, 0)
+            else
+                bg.CFrame = CFrame.new(RootPart.Position) * camera.CFrame.Rotation
+            end
+            task.wait()
+        end
+    end)
+end
+
+local function stopFlying()
+    flying = false
+    if bv then bv:Destroy() end
+    if bg then bg:Destroy() end
+    if Humanoid then Humanoid.PlatformStand = false end
+    for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = false end end
+end
+
+-- 3. Walk & Air Platform Logic
+local airWalking = false
+local airPlatform = nil
+local function toggleAirWalk(state)
+    airWalking = state
+    if airWalking then
+        airPlatform = Instance.new("Part")
+        airPlatform.Size = Vector3.new(20, 1, 20)
+        airPlatform.Transparency = 0.8
+        airPlatform.Material = Enum.Material.Neon
+        airPlatform.Color = Theme.Accent
+        airPlatform.Anchored = true
+        airPlatform.Parent = workspace
+        
+        task.spawn(function()
+            while airWalking and Character and RootPart do
+                airPlatform.CFrame = CFrame.new(RootPart.Position.X, RootPart.Position.Y - 3.5, RootPart.Position.Z)
+                task.wait()
+            end
+        end)
+    else
+        if airPlatform then airPlatform:Destroy(); airPlatform = nil end
+    end
+end
+
+-- 4. Double Jump Engine
+local doubleJumpEnabled = false
+local hasDoubleJumped = false
+local oldPower = 0
+
+local function initDoubleJump()
+    UserInputService.JumpRequest:Connect(function()
+        if not doubleJumpEnabled then return end
+        if Humanoid:GetState() == Enum.HumanoidStateType.Freefall and not hasDoubleJumped then
+            hasDoubleJumped = true
+            RootPart.Velocity = Vector3.new(RootPart.Velocity.X, Humanoid.JumpPower * 1.2, RootPart.Velocity.Z)
+        end
+    end)
+    Humanoid.StateChanged:Connect(function(old, new)
+        if new == Enum.HumanoidStateType.Landed then
+            hasDoubleJumped = false
+        end
+    end)
+end
+
+-- 5. Dash Mechanics Engine
+local dashEnabled = false
+local canDash = true
+local dashSpeed = 120
+local dashCooldown = 1.5
+
+local function performDash()
+    if not dashEnabled or not canDash or not Character or not RootPart then return end
+    canDash = false
+    
+    local moveDirection = Humanoid.MoveDirection
+    if moveDirection.Magnitude == 0 then
+        moveDirection = RootPart.CFrame.LookVector
+    end
+
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e5, 0, 1e5)
+    bodyVelocity.Velocity = moveDirection * dashSpeed
+    bodyVelocity.Parent = RootPart
+
+    task.spawn(function()
+        task.wait(0.2)
+        bodyVelocity:Destroy()
+        task.wait(dashCooldown)
+        canDash = true
+    end)
+end
+
+-- PC Event for Dash (Q Key)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        performDash()
+    end
+end)
+
+-- Create Mobile Dash Button Screen Layout
+local MobileActionGui = Instance.new("ScreenGui")
+MobileActionGui.Name = "QuantumMobileActions"
+MobileActionGui.ResetOnSpawn = false
+MobileActionGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local DashMobileBtn = Instance.new("TextButton")
+DashMobileBtn.Size = UDim2.new(0, 50, 0, 50)
+DashMobileBtn.Position = UDim2.new(0.8, 0, 0.55, 0)
+DashMobileBtn.BackgroundColor3 = Theme.ElementBg
+DashMobileBtn.Text = "DASH"
+DashMobileBtn.TextColor3 = Theme.Accent
+DashMobileBtn.TextSize = 11
+DashMobileBtn.Font = Enum.Font.GothamBold
+DashMobileBtn.Visible = false
+DashMobileBtn.Parent = MobileActionGui
+Instance.new("UICorner", DashMobileBtn).CornerRadius = UDim.new(1, 0)
+local dashStroke = Instance.new("UIStroke", DashMobileBtn)
+dashStroke.Color = Theme.Accent
+dashStroke.Thickness = 1.5
+
+DashMobileBtn.MouseButton1Click:Connect(performDash)
+
+-- 6. Shift Lock Custom System (PC & Mobile)
+local shiftLockEnabled = false
+local slConnection = nil
+
+local ShiftLockBtn = Instance.new("TextButton")
+ShiftLockBtn.Size = UDim2.new(0, 50, 0, 50)
+ShiftLockBtn.Position = UDim2.new(0.8, 0, 0.45, 0)
+ShiftLockBtn.BackgroundColor3 = Theme.ElementBg
+ShiftLockBtn.Text = "LOCK"
+ShiftLockBtn.TextColor3 = Theme.TextMuted
+ShiftLockBtn.TextSize = 10
+ShiftLockBtn.Font = Enum.Font.GothamBold
+ShiftLockBtn.Visible = false
+ShiftLockBtn.Parent = MobileActionGui
+Instance.new("UICorner", ShiftLockBtn).CornerRadius = UDim.new(1, 0)
+local slStroke = Instance.new("UIStroke", ShiftLockBtn)
+slStroke.Color = Theme.Border
+
+local function toggleShiftLock(state)
+    shiftLockEnabled = state
+    if shiftLockEnabled then
+        ShiftLockBtn.TextColor3 = Theme.Accent
+        slStroke.Color = Theme.Accent
+        slConnection = RunService.RenderStepped:Connect(function()
+            if Character and RootPart then
+                Camera.CameraType = Enum.CameraType.Scriptable
+                local camRotation = Camera.CFrame.Rotation
+                Camera.CFrame = CFrame.new(RootPart.Position + Vector3.new(0, 2.5, 0)) * camRotation * CFrame.new(2.5, 0, 10)
+                RootPart.CFrame = CFrame.lookAt(RootPart.Position, RootPart.Position + Vector3.new(Camera.CFrame.LookVector.X, 0, Camera.CFrame.LookVector.Z))
+            end
+        end)
+    else
+        ShiftLockBtn.TextColor3 = Theme.TextMuted
+        slStroke.Color = Theme.Border
+        if slConnection then slConnection:Disconnect(); slConnection = nil end
+        Camera.CameraType = Enum.CameraType.Custom
+    end
+end
+
+ShiftLockBtn.MouseButton1Click:Connect(function()
+    toggleShiftLock(not shiftLockEnabled)
+end)
+
+-- 7. Cursor Changer (PC Only)
+local cursorEnabled = false
+local customCursorUrl = "rbxassetid://13214539130" -- High Quality Crosshair Cursor
+local originalCursor = ""
+
+local function toggleCursor(state)
+    cursorEnabled = state
+    if cursorEnabled then
+        originalCursor = UserInputService.MouseIcon
+        UserInputService.MouseIcon = customCursorUrl
+    else
+        UserInputService.MouseIcon = originalCursor
+    end
+end
+
+-- 8. Combat & World Hacks (Aimbot & Hitbox)
+local aimbotActive = false
+local targetPlayerName = ""
+local hitboxActive = false
+local targetHitboxSize = 2
+local originalSizes = {}
+
+RunService.RenderStepped:Connect(function()
+    if aimbotActive and targetPlayerName ~= "" then
+        local targetMatch = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and string.find(string.lower(p.Name), string.lower(targetPlayerName)) then
+                targetMatch = p
+                break
+            end
+        end
+        if targetMatch and targetMatch.Character and targetMatch.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetMatch.Character.Head.Position)
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.8) do
+        if hitboxActive then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = p.Character.HumanoidRootPart
+                    if not originalSizes[p.Name] then originalSizes[p.Name] = hrp.Size end
+                    hrp.Size = Vector3.new(targetHitboxSize, targetHitboxSize, targetHitboxSize)
+                    hrp.Transparency = 0.6
+                    hrp.BrickColor = BrickColor.new("Lime green")
+                    hrp.Material = Enum.Material.Neon
+                    hrp.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+local function resetHitboxes()
+    hitboxActive = false
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and originalSizes[p.Name] then
+            local hrp = p.Character.HumanoidRootPart
+            hrp.Size = originalSizes[p.Name]
+            hrp.Transparency = 1
+            hrp.CanCollide = true
+        end
+    end
+    table.clear(originalSizes)
+end
+
+-- 9. World Builder Block Placer
+local buildActive = false
+local blockColor = Theme.Accent
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed or not buildActive then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local ray = Camera:ScreenPointToRay(input.Position.X, input.Position.Y)
+        local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 500)
+        
+        if raycastResult then
+            local p = Instance.new("Part")
+            p.Size = Vector3.new(4, 4, 4)
+            p.Position = raycastResult.Position + (raycastResult.Normal * 2)
+            p.Color = blockColor
+            p.Material = Enum.Material.SmoothPlastic
+            p.Anchored = true
+            p.Parent = workspace
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- TAB CONTENTS STRUCTURING
+----------------------------------------------------------------
+local MainTab = CreateTab("Modifiers", "Main")
+local CombatTab = CreateTab("Combat", "Combat")
+local MovementTab = CreateTab("Movement", "Movement")
+local VisualTab = CreateTab("Shaders", "Visuals")
+local BuildTab = CreateTab("Builder", "Build")
+local ConfigTab = CreateTab("Settings", "Settings")
+
+-- [[ A. MAIN TAB MODIFIERS ]]
+AddToggle(MainTab, "Flight Mode", false, function(st) flying = st; if flying then startFlying() else stopFlying() end end)
+AddAdjuster(MainTab, "Flight Speed", 60, 20, 200, 10, function(v) flySpeed = v end)
+AddToggle(MainTab, "Flight Trail Neon", false, function(st)
+    trailEnabled = st
+    if trailEnabled then setupTrail() else
+        for _, item in ipairs(activeTrails) do if item:IsA("Trail") then item.Enabled = false end end
+    end
+end)
+local speedEnabled = false
+AddToggle(MainTab, "Speed Hack", false, function(st)
+    speedEnabled = st
+    Humanoid.WalkSpeed = speedEnabled and 100 or 16
+end)
+AddAdjuster(MainTab, "Walk Speed Val", 100, 16, 250, 15, function(v)
+    if speedEnabled then Humanoid.WalkSpeed = v end
+end)
+
+-- [[ B. COMBAT TAB ]]
+AddTextBox(CombatTab, "Enter Target Name for Lock...", function(tx) targetPlayerName = tx end)
+AddToggle(CombatTab, "Aimbot Target Lock", false, function(st) aimbotActive = st end)
+AddToggle(CombatTab, "Expand World Hitboxes", false, function(st) if st then hitboxActive = true else resetHitboxes() end end)
+AddAdjuster(CombatTab, "Hitbox Dimension Radius", 2, 2, 30, 2, function(v) targetHitboxSize = v end)
+
+-- [[ C. MOVEMENT TAB (NEW) ]]
+AddToggle(MovementTab, "Double Jump Trigger", false, function(st) doubleJumpEnabled = st end)
+AddToggle(MovementTab, "Dash Dash Mechanics", false, function(st) dashEnabled = st; DashMobileBtn.Visible = st end)
+AddAdjuster(MovementTab, "Dash Thrust Velocity", 120, 50, 300, 10, function(v) dashSpeed = v end)
+AddToggle(MovementTab, "Walk on Air / Water", false, function(st) toggleAirWalk(st) end)
+
+-- [[ D. SHADER CONTROLS ]]
+local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect", Lighting)
+local blur = Lighting:FindFirstChildOfClass("BlurEffect") or Instance.new("BlurEffect", Lighting)
+local colorCorr = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect", Lighting)
+
+AddAdjuster(VisualTab, "Map Lighting Brightness", 2, 0, 10, 1, function(v) Lighting.Brightness = v end)
+AddAdjuster(VisualTab, "Graphic Blur Scale", 0, 0, 24, 2, function(v) blur.Size = v end)
+AddAdjuster(VisualTab, "Saturation Modifier", 0, 0, 5, 1, function(v) colorCorr.Saturation = v end)
+AddAdjuster(VisualTab, "Neon Bloom Ambient", 1, 0, 10, 1, function(v) bloom.Intensity = v end)
+
+-- [[ E. BUILDER TAB ]]
+AddToggle(BuildTab, "Raycast Core Placement", false, function(st) buildActive = st end)
+AddButton(BuildTab, "Set Material Color: Neon Mint", function() blockColor = Theme.Accent end)
+AddButton(BuildTab, "Set Material Color: Ruby Crimson", function() blockColor = Color3.fromRGB(255, 50, 50) end)
+AddButton(BuildTab, "Purge Custom Placed Blocks", function() 
+    for _, obj in ipairs(workspace:GetChildren()) do 
+        if obj:IsA("Part") and obj.Size == Vector3.new(4, 4, 4) and obj.Anchored == true then obj:Destroy() end 
+    end 
+end)
+
+-- [[ F. SETTINGS TAB ]]
+AddToggle(ConfigTab, "Enable Custom Gaming Cursor", false, function(st) toggleCursor(st) end)
+AddToggle(ConfigTab, "Enable Shift Lock Controller", false, function(st) ShiftLockBtn.Visible = st; if not st then toggleShiftLock(false) end end)
+local rainbowAccent = false
+AddToggle(ConfigTab, "Sidebar Rainbow Glow", false, function(state)
+    rainbowAccent = state
+    task.spawn(function()
+        while rainbowAccent do
+            for h = 0, 1, 0.005 do
+                if not rainbowAccent then break end
+                local color = Color3.fromHSV(h, 1, 1)
+                MainStroke.Color = color
+                FloatStroke.Color = color
+                task.wait(0.02)
+            end
+        end
+        MainStroke.Color = Theme.Accent
+        FloatStroke.Color = Theme.Accent
+    end)
+end)
+AddButton(ConfigTab, "Rejoin Safe Server Instance", function()
+    local ok, _ = pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end)
+    if not ok then TeleportService:Teleport(game.PlaceId, LocalPlayer) end
+end)
+AddButton(ConfigTab, "Purge Quantum Engine GUI", function() 
+    stopFlying(); resetHitboxes(); toggleAirWalk(false); toggleShiftLock(false); toggleCursor(false)
+    MobileActionGui:Destroy(); ScreenGui:Destroy() 
+end)
+
+----------------------------------------------------------------
+-- INITIALIZATION & CORE STARTUP
+----------------------------------------------------------------
+initDoubleJump()
+
+MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; FloatingBtn.Visible = true end)
+FloatingBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; FloatingBtn.Visible = false end)
+CloseBtn.MouseButton1Click:Connect(function() 
+    stopFlying(); resetHitboxes(); toggleAirWalk(false); toggleShiftLock(false); toggleCursor(false)
+    MobileActionGui:Destroy(); ScreenGui:Destroy() 
+end)
+
+-- Auto Focus on Modifiers (Main) Page
+local firstTab = TabScroll:FindFirstChild("ModifiersTab")
+if firstTab then
+    firstTab.TextColor3 = Theme.Accent
+    firstTab.BackgroundTransparency = 0.9
+    firstTab.BackgroundColor3 = Theme.Accent
+    MainTab.Visible = true
+    for _, sub in ipairs(firstTab:FindFirstChild("Frame"):GetChildren()) do
+        if sub:IsA("Frame") then sub.BackgroundColor3 = Theme.Accent end
+    end
+end
 
