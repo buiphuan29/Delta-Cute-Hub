@@ -1,7 +1,7 @@
 --[[
     🎮 DELTA DARK PREMIUM HUB - VERSION 8.0 (ULTIMATE CUSTOMIZER) 🎮
     - Hoạt ảnh & VFX: Sửa lỗi Emotes & Chuyển đổi R6/R15 bằng bộ lọc Animator tương thích 100%.
-    - Mới: Thanh trượt tự do thay đổi kích thước Hub (UI Scale) từ 0.7x đến 1.3x.
+    - Mới: Thanh trượt tự do thay đổi kích thước Hub (UI Scale) từ 0.7x đến 1.3x bằng UIScale.
     - Mới: Tab Công Cụ (BTools, TP Tool, Tùy chỉnh kích cỡ vũ khí, dọn dẹp Backpack).
     - Tính năng Hệ thống: Tích hợp đầy đủ Anti-AFK, Anti-Fling, Anti-Void và Boost FPS siêu mượt.
     - Thiết kế: Giao diện chuyển sắc cực đẹp, khoảng cách rộng rãi, chống bấm nhầm.
@@ -46,6 +46,22 @@ CustomBlur.Size = 0
 CustomColorCorr.Contrast = 0
 CustomColorCorr.Saturation = 0
 CustomColorCorr.Brightness = 0
+
+-- [SỬA LỖI]: Định nghĩa hàm dọn dẹp Shader
+local function cleanShaders()
+    if CustomBlur then pcall(function() CustomBlur:Destroy() end) end
+    if CustomColorCorr then pcall(function() CustomColorCorr:Destroy() end) end
+end
+
+-- [SỬA LỖI]: Thêm hàm mẫu cho Smart Fling tránh lỗi Nil
+local function toggleSmartFling(Value)
+    if Value then
+        print("Smart Fling đã kích hoạt!")
+        -- Code logic Fling của cậu ở đây
+    else
+        print("Smart Fling đã tắt!")
+    end
+end
 
 -- Tạo folder chứa đồ xây dựng của Hub
 local buildFolder = Workspace:FindFirstChild("Delta_Premium_Builds")
@@ -136,17 +152,21 @@ local BASE_WIDTH = 560
 local BASE_HEIGHT = 370
 local currentScale = 1.0
 
--- Khung chính của Hub (Thiết kế bo tròn nghệ thuật hơn)
+-- Khung chính của Hub
 local MainFrame = Instance.new("Frame", DarkGui)
 MainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 MainFrame.Position = UDim2.new(0.5, -BASE_WIDTH/2, 0.5, -BASE_HEIGHT/2)
 MainFrame.Size = UDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT)
 MainFrame.Active = true
 
+-- [TỐI ƯU HÓA]: Tích hợp UIScale giúp tự động hóa co giãn tỷ lệ giao diện
+local HubScale = Instance.new("UIScale", MainFrame)
+HubScale.Scale = 1.0
+
 local FrameCorner = Instance.new("UICorner", MainFrame)
 FrameCorner.CornerRadius = UDim.new(0, 16)
 
--- Viền Neon tuyệt đẹp
+-- Viền Neon
 local HubStroke = Instance.new("UIStroke", MainFrame)
 HubStroke.Thickness = 2
 HubStroke.Color = Color3.fromRGB(0, 120, 215)
@@ -274,7 +294,7 @@ end)
 MiniButton.MouseButton1Click:Connect(function()
     MiniButton.Visible = false
     MainFrame.Visible = true
-    MainFrame:TweenSize(UDim2.new(0, BASE_WIDTH * currentScale, 0, BASE_HEIGHT * currentScale), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(UDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT), "Out", "Quad", 0.3, true)
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
@@ -282,7 +302,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     DarkGui:Destroy()
 end)
 
--- Sidebar bên trái (Đã dãn rộng, tạo nét chuyên nghiệp)
+-- Sidebar bên trái
 local TabContainer = Instance.new("ScrollingFrame", MainFrame)
 TabContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
 TabContainer.Position = UDim2.new(0, 12, 0, 52)
@@ -295,7 +315,7 @@ local TabList = Instance.new("UIListLayout", TabContainer)
 TabList.Padding = UDim.new(0, 7)
 TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Khung hiển thị nội dung bên phải (Phân bổ cực kỳ thoáng, không dính sát)
+-- Khung hiển thị nội dung bên phải
 local ContentContainer = Instance.new("ScrollingFrame", MainFrame)
 ContentContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 ContentContainer.Position = UDim2.new(0, 148, 0, 52)
@@ -306,7 +326,7 @@ ContentContainer.ScrollBarImageColor3 = Color3.fromRGB(55, 55, 55)
 Instance.new("UICorner", ContentContainer).CornerRadius = UDim.new(0, 12)
 
 local ContentLayout = Instance.new("UIListLayout", ContentContainer)
-ContentLayout.Padding = UDim.new(0, 14) -- Khoảng cách hoàn hảo 14px giúp UI thoáng, đẹp mắt
+ContentLayout.Padding = UDim.new(0, 14)
 ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- Tự động căn chỉnh trang cuộn
@@ -469,18 +489,10 @@ end
 ----------------------------------------------------
 -- ⚙️ HÀM THAY ĐỔI KÍCH THƯỚC TOÀN GIAO DIỆN (SCALE HUB)
 ----------------------------------------------------
+-- [TỐI ƯU HÓA]: Chỉ cần đổi giá trị UIScale.Scale, mọi thứ bên trong sẽ tự động tỷ lệ theo chuẩn xác!
 local function setHubScale(scaleValue)
     currentScale = scaleValue
-    local targetWidth = BASE_WIDTH * scaleValue
-    local targetHeight = BASE_HEIGHT * scaleValue
-    
-    -- Giữ vị trí trung tâm không đổi khi co giãn
-    local currentPos = MainFrame.Position
-    MainFrame.Size = UDim2.new(0, targetWidth, 0, targetHeight)
-    
-    -- Tự điều chỉnh kích thước góc bo tròn và độ dày viền theo tỷ lệ
-    FrameCorner.CornerRadius = UDim.new(0, 16 * scaleValue)
-    HubStroke.Thickness = 2 * scaleValue
+    HubScale.Scale = scaleValue
 end
 
 ----------------------------------------------------
@@ -602,7 +614,7 @@ local function getCharacterRigType()
     if hum then
         return hum.RigType == Enum.HumanoidRigType.R15 and "R15" or "R6"
     end
-    return "R15" -- Mặc định nếu lỗi
+    return "R15"
 end
 
 -- Dừng toàn bộ các điệu nhảy/emote đang chạy
@@ -628,7 +640,6 @@ local function playSmartEmote(r15_Id, r6_Id)
     
     stopAllEmotes()
     
-    -- Roblox bắt buộc phải gọi thông qua Animator để bảo đảm hoạt ảnh hoạt động tốt
     local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator", hum)
     local currentRig = getCharacterRigType()
     local finalAnimId = (currentRig == "R15") and r15_Id or r6_Id
@@ -725,6 +736,71 @@ local function toggleFly(Value)
 end
 
 ----------------------------------------------------
+-- CÁC PHÂN VÙNG HOẠT ĐỘNG PHỤ TRỢ (TRƯỚC TAB CHÍNH)
+----------------------------------------------------
+local airWalkActive, airWalkConn, airPlatform
+local function toggleAirWalk(Value)
+    airWalkActive = Value
+    if airWalkActive then
+        airPlatform = Instance.new("Part", buildFolder)
+        airPlatform.Size = Vector3.new(10, 0.8, 10)
+        airPlatform.Transparency = 0.5
+        airPlatform.Color = HubStroke.Color
+        airPlatform.Material = Enum.Material.Neon
+        airPlatform.Anchored = true
+        
+        HubStroke:GetPropertyChangedSignal("Color"):Connect(function()
+            if airPlatform then airPlatform.Color = HubStroke.Color end
+        end)
+
+        airWalkConn = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp and airPlatform then
+                airPlatform.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 3.4, hrp.Position.Z)
+            end
+        end)
+        _G.DeltaHubConnections["AirWalk"] = airWalkConn
+    else
+        if airWalkConn then airWalkConn:Disconnect() airWalkConn = nil end
+        if airPlatform then airPlatform:Destroy() airPlatform = nil end
+    end
+end
+
+local waterWalkActive, waterWalkConn, waterPlatform
+local function toggleWaterWalk(Value)
+    waterWalkActive = Value
+    if waterWalkActive then
+        waterPlatform = Instance.new("Part", buildFolder)
+        waterPlatform.Size = Vector3.new(14, 0.5, 14)
+        waterPlatform.Transparency = 0.8
+        waterPlatform.Color = Color3.fromRGB(0, 255, 255)
+        waterPlatform.Material = Enum.Material.Neon
+        waterPlatform.Anchored = true
+        
+        waterWalkConn = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp and waterPlatform then
+                local rayParams = RaycastParams.new()
+                rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                rayParams.FilterDescendantsInstances = {char, buildFolder}
+                local ray = Workspace:Raycast(hrp.Position, Vector3.new(0, -12, 0), rayParams)
+                if ray and ray.Material == Enum.Material.Water then
+                    waterPlatform.CFrame = CFrame.new(hrp.Position.X, ray.Position.Y + 0.35, hrp.Position.Z)
+                else
+                    waterPlatform.CFrame = CFrame.new(hrp.Position.X, -9999, hrp.Position.Z)
+                end
+            end
+        end)
+        _G.DeltaHubConnections["WaterWalk"] = waterWalkConn
+    else
+        if waterWalkConn then waterWalkConn:Disconnect() waterWalkConn = nil end
+        if waterPlatform then waterPlatform:Destroy() waterPlatform = nil end
+    end
+end
+
+----------------------------------------------------
 -- CÁC TAB HIỂN THỊ TÍNH NĂNG
 ----------------------------------------------------
 
@@ -773,7 +849,6 @@ local function loadCombatTab()
     end)
 end
 
--- TAB MỚI: QUẢN LÝ CÔNG CỤ & THANH CÔNG CỤ (NEW)
 local function loadToolsTab()
     clearContent()
     addParagraph("CUNG CẤP CÔNG CỤ (VẬT PHẨM)")
@@ -790,7 +865,6 @@ local function loadToolsTab()
     addButton("DỌN SẠCH TÚI ĐỒ (Clear Backpack)", clearBackpack)
 end
 
--- TAB SHADERS ĐỒ HỌA
 local function loadShaderTab()
     clearContent()
     addParagraph("TÙY CHỈNH SHADER HÌNH ẢNH")
@@ -804,7 +878,6 @@ local function loadShaderTab()
     end)
 end
 
--- TAB QUAN SÁT (ESP / NOCLIP)
 local function loadVisualsTab()
     clearContent()
     addParagraph("HIỂN THỊ HÌNH ẢNH (ESP)")
@@ -850,10 +923,8 @@ local function loadVisualsTab()
     end)
 end
 
--- TAB VUI NHỘN (ĐÃ FIX KHUNG HOẠT ẢNH & EMOTE 100%)
 local function loadFunTab()
     clearContent()
-    
     addParagraph("CHUYỂN ĐỔI CHUYỂN ĐỘNG RIG")
     addButton("Chuyển sang cử động kiểu R6", function()
         simulateRigMovement("R6")
@@ -863,7 +934,6 @@ local function loadFunTab()
     end)
 
     addParagraph("KHO EMOTE SIÊU BỰA (ĐÃ SỬA)")
-    -- Tham số: playSmartEmote(R15_AssetID, R6_AssetID)
     addButton("Nhảy Griddy", function()
         playSmartEmote(11116631165, 35654434)
     end)
@@ -899,10 +969,8 @@ local function loadFunTab()
     end)
 end
 
--- TAB THAY ĐỔI GIAO DIỆN & KÍCH THƯỚC (UI CUSTOMIZER)
 local function loadCustomTab()
     clearContent()
-    
     addParagraph("ĐIỀU CHỈNH KÍCH THƯỚC GIAO DIỆN (UI SCALE)")
     addSlider("Độ To Nhỏ Hub (Scale)", 0.7, 1.3, currentScale, function(val)
         setHubScale(val)
@@ -926,13 +994,10 @@ local function loadCustomTab()
     end)
 end
 
--- TAB HỆ THỐNG / SETTING (ĐẦY ĐỦ CÁC TÍNH NĂNG ANTI)
 local function loadUtilityTab()
     clearContent()
-    
     addParagraph("HỆ THỐNG PHÒNG CHỐNG (ANTI)")
     
-    -- Anti AFK
     addToggle("Anti-AFK (Chống treo game)", false, function(v)
         if v then
             local VirtualUser = game:GetService("VirtualUser")
@@ -945,7 +1010,6 @@ local function loadUtilityTab()
         end
     end)
     
-    -- Anti Fling
     addToggle("Anti-Fling (Chống kẻ xấu hất văng)", false, function(v)
         if v then
             _G.DeltaHubConnections["AntiFling"] = RunService.Heartbeat:Connect(function()
@@ -964,7 +1028,6 @@ local function loadUtilityTab()
         end
     end)
     
-    -- Anti Void
     addToggle("Anti-Void (Tự cứu khi rơi vực)", false, function(v)
         if v then
             local lastSafePosition = nil
@@ -987,7 +1050,6 @@ local function loadUtilityTab()
         end
     end)
     
-    -- Boost FPS
     addButton("Bật Boost FPS (Anti Lag game)", function()
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character) then
@@ -1012,80 +1074,17 @@ local function loadUtilityTab()
 end
 
 ----------------------------------------------------
--- PHẦN CÒN LẠI CỦA HỆ THỐNG DI CHUYỂN PHỤ TRỢ
-----------------------------------------------------
-function toggleAirWalk(Value)
-    airWalkActive = Value
-    if airWalkActive then
-        airPlatform = Instance.new("Part", buildFolder)
-        airPlatform.Size = Vector3.new(10, 0.8, 10)
-        airPlatform.Transparency = 0.5
-        airPlatform.Color = HubStroke.Color
-        airPlatform.Material = Enum.Material.Neon
-        airPlatform.Anchored = true
-        
-        HubStroke:GetPropertyChangedSignal("Color"):Connect(function()
-            if airPlatform then airPlatform.Color = HubStroke.Color end
-        end)
-
-        airWalkConn = RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp and airPlatform then
-                airPlatform.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 3.4, hrp.Position.Z)
-            end
-        end)
-        _G.DeltaHubConnections["AirWalk"] = airWalkConn
-    else
-        if airWalkConn then airWalkConn:Disconnect() airWalkConn = nil end
-        if airPlatform then airPlatform:Destroy() airPlatform = nil end
-    end
-end
-
-function toggleWaterWalk(Value)
-    waterWalkActive = Value
-    if waterWalkActive then
-        waterPlatform = Instance.new("Part", buildFolder)
-        waterPlatform.Size = Vector3.new(14, 0.5, 14)
-        waterPlatform.Transparency = 0.8
-        waterPlatform.Color = Color3.fromRGB(0, 255, 255)
-        waterPlatform.Material = Enum.Material.Neon
-        waterPlatform.Anchored = true
-        
-        waterWalkConn = RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp and waterPlatform then
-                local rayParams = RaycastParams.new()
-                rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                rayParams.FilterDescendantsInstances = {char, buildFolder}
-                local ray = Workspace:Raycast(hrp.Position, Vector3.new(0, -12, 0), rayParams)
-                if ray and ray.Material == Enum.Material.Water then
-                    waterPlatform.CFrame = CFrame.new(hrp.Position.X, ray.Position.Y + 0.35, hrp.Position.Z)
-                else
-                    waterPlatform.CFrame = CFrame.new(hrp.Position.X, -9999, hrp.Position.Z)
-                end
-            end
-        end)
-        _G.DeltaHubConnections["WaterWalk"] = waterWalkConn
-    else
-        if waterWalkConn then waterWalkConn:Disconnect() waterWalkConn = nil end
-        if waterPlatform then waterPlatform:Destroy() waterPlatform = nil end
-    end
-end
-
-----------------------------------------------------
 -- KHỞI TẠO TẤT CẢ CÁC SIDEBAR TABS
 ----------------------------------------------------
 local tabs = {
     { "🏠 Chính", loadMainTab },
     { "🎯 Tấn Công", loadCombatTab },
-    { "🛠️ Công Cụ", loadToolsTab }, -- Tab Công Cụ mới với tính năng Backpack Adjuster
+    { "🛠️ Công Cụ", loadToolsTab },
     { "✨ Shaders", loadShaderTab },
     { "👁️ Quan Sát", loadVisualsTab },
-    { "🌀 Vui Nhộn", loadFunTab }, -- Tab chứa Emote và R6/R15 đã sửa lỗi
-    { "🎨 Giao Diện", loadCustomTab }, -- Chứa chỉnh sửa độ to nhỏ và màu viền
-    { "⚙️ Hệ Thống", loadUtilityTab } -- Chứa Anti-AFK, Anti-Fling, Anti-Void, Reset...
+    { "🌀 Vui Nhộn", loadFunTab },
+    { "🎨 Giao Diện", loadCustomTab },
+    { "⚙️ Hệ Thống", loadUtilityTab }
 }
 
 for _, tabData in ipairs(tabs) do
@@ -1118,5 +1117,6 @@ for _, tabData in ipairs(tabs) do
     end)
 end
 
--- Mặc định tải trang đầu tiên
+-- Mặc định tải trang đầu tiên khi mở Hub
 pcall(loadMainTab)
+
