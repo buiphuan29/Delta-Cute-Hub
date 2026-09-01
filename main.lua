@@ -15,6 +15,8 @@ local clickDelay = 0.1
 local toggleKey = Enum.KeyCode.E
 local isMinimized = false
 
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoClickerHub_" .. math.random(1000, 9999)
 screenGui.ResetOnSpawn = false
@@ -102,15 +104,42 @@ local function showToast(titleText, messageText, accentColor)
     end)
 end
 
+local frameHeight = isMobile and 145 or 185
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 230, 0, 185)
+frame.Size = UDim2.new(0, 230, 0, frameHeight)
 frame.Position = UDim2.new(0.5, -115, 0.4, -92)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 frame.BorderSizePixel = 0
 frame.Active = true
-frame.Draggable = true
 frame.ClipsDescendants = true
 frame.Parent = screenGui
+
+local function makeDraggable(topbar, object)
+    local dragging, dragInput, dragStart, startPos
+    topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = object.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    topbar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
 
 local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, 10)
@@ -120,6 +149,8 @@ local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 35)
 titleBar.BackgroundTransparency = 1
 titleBar.Parent = frame
+
+makeDraggable(titleBar, frame)
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.7, 0, 1, 0)
@@ -156,7 +187,7 @@ local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(0.85, 0, 0, 35)
 toggleBtn.Position = UDim2.new(0.075, 0, 0.05, 0)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(210, 50, 50)
-toggleBtn.Text = "Auto Click: OFF [" .. toggleKey.Name .. "]"
+toggleBtn.Text = isMobile and "Auto Click: OFF" or ("Auto Click: OFF [" .. toggleKey.Name .. "]")
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleBtn.Font = Enum.Font.GothamMedium
 toggleBtn.TextSize = 13
@@ -191,30 +222,47 @@ local boxCorner = Instance.new("UICorner")
 boxCorner.CornerRadius = UDim.new(0, 6)
 boxCorner.Parent = speedBox
 
-local keyLabel = Instance.new("TextLabel")
-keyLabel.Size = UDim2.new(0.5, 0, 0, 30)
-keyLabel.Position = UDim2.new(0.075, 0, 0.65, 0)
-keyLabel.Text = "Phim tat:"
-keyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-keyLabel.TextSize = 13
-keyLabel.Font = Enum.Font.Gotham
-keyLabel.BackgroundTransparency = 1
-keyLabel.TextXAlignment = Enum.TextXAlignment.Left
-keyLabel.Parent = contentFrame
+if not isMobile then
+    local keyLabel = Instance.new("TextLabel")
+    keyLabel.Size = UDim2.new(0.5, 0, 0, 30)
+    keyLabel.Position = UDim2.new(0.075, 0, 0.65, 0)
+    keyLabel.Text = "Phim tat:"
+    keyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    keyLabel.TextSize = 13
+    keyLabel.Font = Enum.Font.Gotham
+    keyLabel.BackgroundTransparency = 1
+    keyLabel.TextXAlignment = Enum.TextXAlignment.Left
+    keyLabel.Parent = contentFrame
 
-local keyBox = Instance.new("TextBox")
-keyBox.Size = UDim2.new(0.35, 0, 0, 30)
-keyBox.Position = UDim2.new(0.575, 0, 0.65, 0)
-keyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-keyBox.Text = toggleKey.Name
-keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-keyBox.Font = Enum.Font.Gotham
-keyBox.TextSize = 13
-keyBox.Parent = contentFrame
+    local keyBox = Instance.new("TextBox")
+    keyBox.Size = UDim2.new(0.35, 0, 0, 30)
+    keyBox.Position = UDim2.new(0.575, 0, 0.65, 0)
+    keyBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    keyBox.Text = toggleKey.Name
+    keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    keyBox.Font = Enum.Font.Gotham
+    keyBox.TextSize = 13
+    keyBox.Parent = contentFrame
 
-local keyBoxCorner = Instance.new("UICorner")
-keyBoxCorner.CornerRadius = UDim.new(0, 6)
-keyBoxCorner.Parent = keyBox
+    local keyBoxCorner = Instance.new("UICorner")
+    keyBoxCorner.CornerRadius = UDim.new(0, 6)
+    keyBoxCorner.Parent = keyBox
+
+    keyBox.FocusLost:Connect(function()
+        local inputStr = keyBox.Text:upper()
+        local success, newKey = pcall(function() return Enum.KeyCode[inputStr] end)
+        if success and newKey then
+            toggleKey = newKey
+            showToast("Phim Tat", "Da doi phim tat sang: " .. toggleKey.Name, Color3.fromRGB(0, 170, 255))
+        end
+        keyBox.Text = toggleKey.Name
+        if autoClicking then
+            toggleBtn.Text = "Auto Click: ON [" .. toggleKey.Name .. "]"
+        else
+            toggleBtn.Text = "Auto Click: OFF [" .. toggleKey.Name .. "]"
+        end
+    end)
+end
 
 minBtn.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
@@ -223,7 +271,7 @@ minBtn.MouseButton1Click:Connect(function()
         frame:TweenSize(UDim2.new(0, 230, 0, 35), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true)
         minBtn.Text = "+"
     else
-        frame:TweenSize(UDim2.new(0, 230, 0, 185), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true, function()
+        frame:TweenSize(UDim2.new(0, 230, 0, frameHeight), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.2, true, function()
             contentFrame.Visible = true
         end)
         minBtn.Text = "-"
@@ -232,12 +280,13 @@ end)
 
 local function updateToggleState()
     autoClicking = not autoClicking
+    local keySuffix = isMobile and "" or (" [" .. toggleKey.Name .. "]")
     if autoClicking then
-        toggleBtn.Text = "Auto Click: ON [" .. toggleKey.Name .. "]"
+        toggleBtn.Text = "Auto Click: ON" .. keySuffix
         toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 80)
         showToast("Auto Clicker", "Da BAT Auto Click (Delay: " .. clickDelay .. "s)", Color3.fromRGB(50, 200, 80))
     else
-        toggleBtn.Text = "Auto Click: OFF [" .. toggleKey.Name .. "]"
+        toggleBtn.Text = "Auto Click: OFF" .. keySuffix
         toggleBtn.BackgroundColor3 = Color3.fromRGB(210, 50, 50)
         showToast("Auto Clicker", "Da TAT Auto Click", Color3.fromRGB(210, 50, 50))
     end
@@ -246,27 +295,10 @@ end
 toggleBtn.MouseButton1Click:Connect(updateToggleState)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard and not isMobile then
         if input.KeyCode == toggleKey then
             updateToggleState()
         end
-    end
-end)
-
-keyBox.FocusLost:Connect(function()
-    local inputStr = keyBox.Text:upper()
-    local success, newKey = pcall(function() return Enum.KeyCode[inputStr] end)
-    
-    if success and newKey then
-        toggleKey = newKey
-        showToast("Phim Tat", "Da doi phim tat sang: " .. toggleKey.Name, Color3.fromRGB(0, 170, 255))
-    end
-    keyBox.Text = toggleKey.Name
-    
-    if autoClicking then
-        toggleBtn.Text = "Auto Click: ON [" .. toggleKey.Name .. "]"
-    else
-        toggleBtn.Text = "Auto Click: OFF [" .. toggleKey.Name .. "]"
     end
 end)
 
