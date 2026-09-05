@@ -1,46 +1,114 @@
--- VÔ HIỆU HOÁ ÁNH SÁNG & BÓNG ĐỔ
-local Lighting = game:GetService("Lighting")
-Lighting.GlobalShadows = false
-Lighting.FogEnd = 9e9
-Lighting.ShadowSoftness = 0
-sethiddenproperty(Lighting, "Technology", 2) -- Chuyển sang công nghệ ánh sáng nhẹ nhất (Compatibility)
+-- Tải thư viện giao diện Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- TỐI ƯU HOÁ ĐỊA HÌNH & NƯỚC
-local Terrain = workspace:WaitForChild("Terrain")
-Terrain.WaterWaveSize = 0
-Terrain.WaterWaveSpeed = 0
-Terrain.WaterReflectance = 0
-Terrain.WaterTransparency = 0
-Terrain.Decoration = false
+-- Tạo cửa sổ Menu
+local Window = Rayfield:CreateWindow({
+   Name = "🚀 Super Fix Lag Hub | Delta",
+   LoadingTitle = "Đang tải hệ thống tối ưu...",
+   LoadingSubtitle = "Dành riêng cho Delta",
+   ConfigurationSaving = {
+      Enabled = false,
+   },
+   Discord = {
+      Enabled = false,
+   },
+   KeySystem = false,
+})
 
--- LẶP QUA TẤT CẢ VẬT THỂ ĐỂ GIẢM CHI TIẾT
-for _, v in pairs(game:GetDescendants()) do
-    if v:IsA("BasePart") and not v:IsA("MeshPart") then
-        v.Material = Enum.Material.SmoothPlastic
-        v.Reflectance = 0
-        v.CastShadow = false
-    elseif v:IsA("Decal") or v:IsA("Texture") then
-        v:Destroy() -- Xóa hình ảnh dán trên khối
-    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-        v.Lifetime = NumberRange.new(0)
-        v.Enabled = false -- Tắt các hiệu ứng hạt (lửa, khói, vệt sáng)
-    elseif v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("SunRaysEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("Atmosphere") then
-        v.Enabled = false -- Tắt các hiệu ứng camera
-    end
-end
+-- Tạo Tab chức năng
+local MainTab = Window:CreateTab("Tối ưu hóa (Lag & FPS)")
+local ExtraTab = Window:CreateTab("Tính năng phụ")
 
--- TẮT HOẠT ẢNH THỪA (Tùy chọn, giúp giảm tải CPU)
-workspace.DescendantAdded:Connect(function(child)
-    if child:IsA("BasePart") then
-        child.Material = Enum.Material.SmoothPlastic
-        child.CastShadow = false
-    end
-end)
+-- [1] Nút Kích hoạt Super Fix Lag (Xóa Texture, Đưa về SmoothPlastic)
+MainTab:CreateButton({
+   Name = "✅ Kích hoạt Super Fix Lag (An Toàn)",
+   Callback = function()
+        -- Tối ưu ánh sáng
+        pcall(function()
+            game.Lighting.GlobalShadows = false
+            game.Lighting.FogEnd = 9e9
+            game.Lighting.ShadowSoftness = 0
+        end)
+        
+        -- Tối ưu nước và địa hình
+        pcall(function()
+            workspace.Terrain.WaterWaveSize = 0
+            workspace.Terrain.WaterWaveSpeed = 0
+            workspace.Terrain.WaterReflectance = 0
+            workspace.Terrain.WaterTransparency = 0
+            workspace.Terrain.Decoration = false
+        end)
+        
+        -- Lặp qua để xóa chi tiết thừa (Không xóa khối để tránh rớt map)
+        for _, v in pairs(workspace:GetDescendants()) do
+            pcall(function()
+                if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.Reflectance = 0
+                    v.CastShadow = false
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v:Destroy() -- Xóa toàn bộ bề mặt ảnh dán
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Lifetime = NumberRange.new(0)
+                elseif v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then
+                    v:Destroy() -- Xóa hiệu ứng chói mắt
+                end
+            end)
+        end
+        Rayfield:Notify({
+            Title = "Thành công!",
+            Content = "Đã tối ưu hóa toàn bộ bản đồ.",
+            Duration = 3,
+        })
+   end,
+})
 
--- THÔNG BÁO HOÀN TẤT
-local StarterGui = game:GetService("StarterGui")
-StarterGui:SetCore("SendNotification", {
-    Title = "Tối ưu hóa hoàn tất!";
-    Text = "Đã giảm đồ họa, xóa texture & tăng FPS.";
-    Duration = 5;
+-- [2] Nút xóa bỏ hoàn toàn bầu trời (Tăng FPS đáng kể)
+MainTab:CreateButton({
+   Name = "🌌 Xóa Bầu Trời (Clear Skybox)",
+   Callback = function()
+        pcall(function()
+            game.Lighting.Sky:Destroy()
+            game.Lighting.Atmosphere:Destroy()
+        end)
+        Rayfield:Notify({
+            Title = "Thành công!",
+            Content = "Đã xóa bầu trời, giảm tải GPU.",
+            Duration = 3,
+        })
+   end,
+})
+
+-- [3] Tối ưu hóa cho cày cuốc (AFK Mode - Màn hình đen)
+ExtraTab:CreateToggle({
+   Name = "Chế độ AFK (Màn hình đen - Tăng Max FPS)",
+   CurrentValue = false,
+   Callback = function(Value)
+        pcall(function()
+            if Value then
+                local gui = Instance.new("ScreenGui")
+                gui.Name = "AFKGui"
+                gui.Parent = game.CoreGui
+                local frame = Instance.new("Frame")
+                frame.Size = UDim2.new(10, 0, 10, 0)
+                frame.Position = UDim2.new(-5, 0, -5, 0)
+                frame.BackgroundColor3 = Color3.new(0, 0, 0)
+                frame.Parent = gui
+                
+                game:GetService("RunService"):Set3dRenderingEnabled(false) -- Tắt render 3D
+            else
+                if game.CoreGui:FindFirstChild("AFKGui") then
+                    game.CoreGui.AFKGui:Destroy()
+                end
+                game:GetService("RunService"):Set3dRenderingEnabled(true) -- Bật lại render 3D
+            end
+        end)
+   end,
+})
+
+-- Thông báo khi script load xong
+Rayfield:Notify({
+   Title = "Hệ thống đã sẵn sàng",
+   Content = "UI Rayfield đã load thành công trên Delta!",
+   Duration = 5,
 })
