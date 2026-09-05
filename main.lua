@@ -1,96 +1,46 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- VÔ HIỆU HOÁ ÁNH SÁNG & BÓNG ĐỔ
+local Lighting = game:GetService("Lighting")
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 9e9
+Lighting.ShadowSoftness = 0
+sethiddenproperty(Lighting, "Technology", 2) -- Chuyển sang công nghệ ánh sáng nhẹ nhất (Compatibility)
 
-local Window = Rayfield:CreateWindow({
-   Name = "Auto Clicker Hub",
-   Icon = 0,
-   LoadingTitle = "Auto Clicker Hub",
-   LoadingSubtitle = "Rayfield Interface",
-   Theme = "Default",
-   DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false,
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = nil,
-      FileName = "AutoClickerConfig"
-   },
-   Discord = {
-      Enabled = false,
-      Invite = "noinvitelink",
-      RememberJoins = true
-   },
-   KeySystem = false
-})
+-- TỐI ƯU HOÁ ĐỊA HÌNH & NƯỚC
+local Terrain = workspace:WaitForChild("Terrain")
+Terrain.WaterWaveSize = 0
+Terrain.WaterWaveSpeed = 0
+Terrain.WaterReflectance = 0
+Terrain.WaterTransparency = 0
+Terrain.Decoration = false
 
-local MainTab = Window:CreateTab("Chức Năng Chính", 4483362458)
-
-local autoClicking = false
-local clickDelay = 0.1
-
-local function simulateClick()
-    if mouse1click then
-        mouse1click()
-    elseif game:GetService("VirtualInputManager") then
-        game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, game, 0)
-    else
-        local VirtualUser = game:GetService("VirtualUser")
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton1(Vector2.new(0, 0))
+-- LẶP QUA TẤT CẢ VẬT THỂ ĐỂ GIẢM CHI TIẾT
+for _, v in pairs(game:GetDescendants()) do
+    if v:IsA("BasePart") and not v:IsA("MeshPart") then
+        v.Material = Enum.Material.SmoothPlastic
+        v.Reflectance = 0
+        v.CastShadow = false
+    elseif v:IsA("Decal") or v:IsA("Texture") then
+        v:Destroy() -- Xóa hình ảnh dán trên khối
+    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+        v.Lifetime = NumberRange.new(0)
+        v.Enabled = false -- Tắt các hiệu ứng hạt (lửa, khói, vệt sáng)
+    elseif v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("SunRaysEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("Atmosphere") then
+        v.Enabled = false -- Tắt các hiệu ứng camera
     end
 end
 
-local Toggle = MainTab:CreateToggle({
-   Name = "Bật / Tắt Auto Click",
-   CurrentValue = false,
-   Flag = "AutoClickerToggle",
-   Callback = function(Value)
-      autoClicking = Value
-      if autoClicking then
-         Rayfield:Notify({
-            Title = "Auto Clicker",
-            Content = "Đã BẬT Auto Click!",
-            Duration = 2,
-            Image = 4483362458,
-         })
-      else
-         Rayfield:Notify({
-            Title = "Auto Clicker",
-            Content = "Đã TẮT Auto Click!",
-            Duration = 2,
-            Image = 4483362458,
-         })
-      end
-   end,
-})
-
-local Keybind = MainTab:CreateKeybind({
-   Name = "Phím Tắt (Hotkey)",
-   CurrentKeybind = "E",
-   HoldToInteract = false,
-   Flag = "AutoClickerKeybind",
-   Callback = function(Keybind)
-      Toggle:Set(not autoClicking)
-   end,
-})
-
-local Slider = MainTab:CreateSlider({
-   Name = "Thời Gian Delay (Giây)",
-   Range = {0.001, 1},
-   Increment = 0.01,
-   Suffix = "s",
-   CurrentValue = 0.1,
-   Flag = "AutoClickerDelay",
-   Callback = function(Value)
-      clickDelay = Value
-   end,
-})
-
-task.spawn(function()
-    while true do
-        if autoClicking then
-            pcall(simulateClick)
-        end
-        task.wait(clickDelay)
+-- TẮT HOẠT ẢNH THỪA (Tùy chọn, giúp giảm tải CPU)
+workspace.DescendantAdded:Connect(function(child)
+    if child:IsA("BasePart") then
+        child.Material = Enum.Material.SmoothPlastic
+        child.CastShadow = false
     end
 end)
 
+-- THÔNG BÁO HOÀN TẤT
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "Tối ưu hóa hoàn tất!";
+    Text = "Đã giảm đồ họa, xóa texture & tăng FPS.";
+    Duration = 5;
+})
